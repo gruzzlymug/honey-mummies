@@ -1,0 +1,95 @@
+
+<!DOCTYPE HTML>
+<html>
+  <head>
+    <script src="js/boid.js"></script>
+    <style>
+      body {
+        margin: 0px;
+        padding: 0px;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="field" width="500" height="500"></canvas>
+    <script>
+      var canvas = document.getElementById('field');
+      var context = canvas.getContext('2d');
+      var last = performance.now();
+
+      var t = 0;
+      var dv = [0, 0];
+      var dp = [0, 0];
+
+      function truncate(num, numDigits) {
+        var multiplier = Math.pow(10, numDigits);
+        var adjNum = num * multiplier;
+        var truncatedNum = Math[adjNum < 0 ? 'ceil' : 'floor'](adjNum);
+        return truncatedNum / multiplier;
+      }
+
+      function debugText() {
+        context.font = '8pt Courier';
+        context.fillText("x = " + truncate(p[0], 3), 20, 20);
+        context.fillText("y = " + truncate(p[1], 3), 20, 30);
+        context.fillText("v = " + truncate(v[1], 3), 20, 40);
+        context.fillText("t = " + truncate(dt, 3), 20, 50);
+      }
+
+      function euler(t0, u0, dt, fn) {
+        var u1 = u0 + dt * fn(t0, u0);
+        return u1;
+      }
+
+      function rand(max, min, _int) {
+        var max = (max === 0 || max) ? max : 1,
+            min = min || 0,
+            gen = min + (max - min) * Math.random();
+
+        return (_int) ? Math.round(gen) : gen;
+      }
+
+      function step(timestamp) {
+        var progress = timestamp - last;
+        last = timestamp;
+        var dt = progress / 100;
+
+        context.clearRect(0, 0, canvas.width, canvas.height);
+
+        f.update(dt);
+
+        for (var bi = 0; bi < numBoids; ++bi) {
+          b[bi].update(dt);
+          b[bi].draw(context);
+        }
+
+        context.rect(2, 2, 498, 498);
+        context.stroke();
+
+        window.requestAnimationFrame(step);
+      }
+
+      var numBoids = 24;
+      var numRows = 6;
+      var b = [];
+      for (var biy = 0; biy < numRows; ++biy) {
+        for (var bix = 0; bix < numBoids/numRows; ++bix) {
+          var p = [biy % 2 * 10 + bix * 30 + 40, biy * 30 + 40];
+          p[0] += Math.random() * 6 - 3;
+          p[1] += Math.random() * 6 - 3;
+          // set and normalize velocity (aka heading)
+          var v = [(Math.random() - 0.5)/2, (Math.random() - 0.5)/2];
+          var lv = Math.sqrt(v[0]*v[0] + v[1]*v[1]);
+          v[0] /= lv;
+          v[1] /= lv;
+          var hue = rand(55, 0, 1);
+          b[biy*numBoids/numRows+bix] = new Boid(p, v, hue);
+        }
+      }
+
+      var f = new Flock();
+
+      window.requestAnimationFrame(step);
+    </script>
+  </body>
+</html>
