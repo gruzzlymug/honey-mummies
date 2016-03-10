@@ -4,6 +4,15 @@ Boid.prototype.angle = [];
 Boid.prototype.neighbors = [];
 Boid.prototype.numBoids = 0;
 
+function normalize(v) {
+  var lv = Math.sqrt(v[0]*v[0] + v[1]*v[1]);
+  if (Math.abs(lv) > 0.0001) {
+    v[0] /= lv;
+    v[1] /= lv;
+  }
+  return v;
+}
+
 function Boid(p, v, hue) {
   this.id = Boid.prototype.numBoids++;
   this.hue = hue;
@@ -22,19 +31,40 @@ Boid.prototype.align = function() {
     av[0] += nv[0];
     av[1] += nv[1];
   }
-  var lv = Math.sqrt(av[0]*av[0] + av[1]*av[1]);
-  av[0] /= lv;
-  av[1] /= lv;
+  av = normalize(av);
 
   var vel = Boid.prototype.vel[this.id];
   vel[0] += av[0] / 3.0;
   vel[1] += av[1] / 3.0;
-
-  var lvel = Math.sqrt(vel[0]*vel[0] + vel[1]*vel[1]);
-  vel[0] /= lvel;
-  vel[1] /= lvel;
+  vel = normalize(vel);
 
   return vel;
+}
+
+Boid.prototype.avoid = function() {
+  var neighbors = Boid.prototype.neighbors[this.id]
+  var numNeighbors = neighbors.length;
+  var av = [0, 0];
+  var bp = Boid.prototype.pos[this.id];
+  var threshold = 25*25;
+  for (var i = 0; i < numNeighbors; ++i) {
+    var nid = neighbors[i];
+    var np = Boid.prototype.pos[nid];
+
+    var d = [0, 0];
+    d[0] = bp[0] - np[0];
+    d[1] = bp[1] - np[1];
+    var ds = d[0]*d[0] + d[1]*d[1];
+    if (ds < threshold) {
+      d = normalize(d);
+      var factor = threshold / ds;
+      av[0] += d[0] * factor;
+      av[1] += d[1] * factor;
+    }
+  }
+  av = normalize(av);
+
+  return av;
 }
 
 Boid.prototype.cohere = function() {
@@ -54,28 +84,20 @@ Boid.prototype.cohere = function() {
   var cv = [0, 0];
   cv[0] = goal[0] - Boid.prototype.pos[this.id][0];
   cv[1] = goal[1] - Boid.prototype.pos[this.id][1];
-
-  // cohesion velocity length
-  var cvl = Math.sqrt(cv[0]*cv[0] + cv[1]*cv[1]);
-  var factor = 1;
-  if (cvl < 25) {
-    factor = -1;
-  }
-
-  cv[0] /= cvl * factor;
-  cv[1] /= cvl * factor;
+  var cv = normalize(cv);
 
   return cv;
 }
 
 Boid.prototype.update = function(dt) {
-  // velocity modifier
+  // velocity modifiers
+  var vv = this.avoid();
   var cv = this.cohere();
   var av = this.align();
   var bv = Boid.prototype.vel[this.id];
   var vm = [0, 0];
-  vm[0] = cv[0] + av[0] + bv[0];
-  vm[1] = cv[1] + av[1] + bv[1];
+  vm[0] = vv[0] + cv[0] + av[0] + bv[0];
+  vm[1] = vv[1] + cv[1] + av[1] + bv[1];
   var lvm = Math.sqrt(vm[0]*vm[0] + vm[1]*vm[1]);
   vm[0] /= lvm;
   vm[1] /= lvm;
@@ -140,10 +162,8 @@ Flock.prototype.setTarget = function(boid) {
 }
 
 function projector(i, id, ps, nns, nn) {
-  var ll = i - nn;
-  ll = ll >= 0 ? ll : 0;
-  var ul = i + nn;
-  ul = ul < numBoids ? ul : numBoids;
+  var ll = Math.max(i - nn, 0);
+  var ul = Math.min(i + nn, numBoids);
   for (var n = ll; n < ul; ++n) {
     pid = ps[n] % 1000;
     if (pid == id) continue;

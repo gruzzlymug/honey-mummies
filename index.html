@@ -69,19 +69,19 @@
         window.requestAnimationFrame(step);
       }
 
-      var numBoids = 24;
-      var numRows = 6;
+      var numBoids = 100;
+      var numRows = 10;
       var b = [];
       for (var biy = 0; biy < numRows; ++biy) {
         for (var bix = 0; bix < numBoids/numRows; ++bix) {
           var p = [biy % 2 * 10 + bix * 30 + 40, biy * 30 + 40];
           p[0] += Math.random() * 6 - 3;
           p[1] += Math.random() * 6 - 3;
-          // set and normalize velocity (aka heading)
+
+          // set velocity (aka heading)
           var v = [(Math.random() - 0.5)/2, (Math.random() - 0.5)/2];
-          var lv = Math.sqrt(v[0]*v[0] + v[1]*v[1]);
-          v[0] /= lv;
-          v[1] /= lv;
+          v = normalize(v);
+
           var hue = rand(55, 0, 1);
           b[biy*numBoids/numRows+bix] = new Boid(p, v, hue);
         }
