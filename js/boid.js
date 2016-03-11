@@ -41,7 +41,7 @@ Boid.prototype.align = function() {
   return vel;
 }
 
-Boid.prototype.avoid = function() {
+Boid.prototype.separate = function() {
   var neighbors = Boid.prototype.neighbors[this.id]
   var numNeighbors = neighbors.length;
   var av = [0, 0];
@@ -91,17 +91,15 @@ Boid.prototype.cohere = function() {
 
 Boid.prototype.update = function(dt) {
   // velocity modifiers
-  var vv = this.avoid();
+  var sv = this.separate();
   var cv = this.cohere();
   var av = this.align();
   var bv = Boid.prototype.vel[this.id];
   var vm = [0, 0];
-  vm[0] = vv[0] + cv[0] + av[0] + bv[0];
-  vm[1] = vv[1] + cv[1] + av[1] + bv[1];
-  var lvm = Math.sqrt(vm[0]*vm[0] + vm[1]*vm[1]);
-  vm[0] /= lvm;
-  vm[1] /= lvm;
+  vm[0] = sv[0] + cv[0] + av[0] + bv[0];
+  vm[1] = sv[1] + cv[1] + av[1] + bv[1];
 
+  vm = normalize(vm);
   Boid.prototype.vel[this.id] = vm;
 
   // update position
@@ -127,32 +125,41 @@ Boid.prototype.draw = function(context) {
   var x = Boid.prototype.pos[this.id][0];
   var y = Boid.prototype.pos[this.id][1];
 
-  ok = false; //(this.id == 14);
-
   context.beginPath();
-  context.arc(x, y, 5, 0, 2*Math.PI, false);
-  if (ok) {
+  context.arc(x, y, 2, 0, 2*Math.PI, false);
+  if (false) {
     context.fillStyle = "hsla(128,50%,50%,1)";
   } else {
     context.fillStyle = "hsla(" + this.hue + ",100%,50%,1)";
   }
   context.fill();
 
-  if (ok) {
+  if (false) {
     for (var ni = 0; ni < Boid.prototype.neighbors[this.id].length; ++ni) {
       var nid = Boid.prototype.neighbors[this.id][ni];
       var nx = Boid.prototype.pos[nid][0];
       var ny = Boid.prototype.pos[nid][1];
       context.beginPath();
-      context.arc(nx, ny, 6, 0, 2*Math.PI, false);
+      context.arc(nx, ny, 2, 0, 2*Math.PI, false);
       context.fillStyle = "#000000";
       context.stroke();
+
     }
   }
 
-  context.font = '6pt Courier';
-  context.fillStyle = "#000000";
-  context.fillText(this.id, x-5, y-5);
+  if (true) {
+    context.strokeStyle = "hsla(" + this.hue + ",100%,50%,1)";
+    context.beginPath();
+    context.moveTo(x, y);
+    var vel = Boid.prototype.vel[this.id];
+    var dist = 4;
+    context.lineTo(x+vel[0]*dist, y+vel[1]*dist);
+    context.stroke();
+  }
+
+  // context.font = '6pt Courier';
+  // context.fillStyle = "#000000";
+  // context.fillText(this.id, x-5, y-5);
 }
 
 function Flock() {
@@ -212,6 +219,12 @@ Flock.prototype.findNeighbors = function() {
     var numNeigbors = Math.min(4, c4k.length);
     for (var ni = 0; ni < numNeigbors; ++ni) {
       var neighborId = closest[c4k[ni]];
+      // check distance to neighbor
+      var bp = Boid.prototype.pos[i];
+      var np = Boid.prototype.pos[neighborId];
+      var dx = bp[0] - np[0];
+      var dy = bp[1] - np[1];
+      // TODO limit neighbors to range
       c4n.push(neighborId);
     }
     Boid.prototype.neighbors[i] = c4n;

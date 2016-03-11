@@ -59,19 +59,20 @@
 
         f.update(dt);
 
-        for (var bi = 0; bi < numBoids; ++bi) {
-          b[bi].update(dt);
-          b[bi].draw(context);
+        for (var idxBoid = 0; idxBoid < numBoids; ++idxBoid) {
+          b[idxBoid].update(dt);
+          b[idxBoid].draw(context);
         }
 
+        context.strokeStyle = "#000000";
         context.rect(2, 2, 498, 498);
         context.stroke();
 
         window.requestAnimationFrame(step);
       }
 
-      var numBoids = 100;
-      var numRows = 10;
+      var numBoids = 225;
+      var numRows = 15;
       var b = [];
       for (var biy = 0; biy < numRows; ++biy) {
         for (var bix = 0; bix < numBoids/numRows; ++bix) {
