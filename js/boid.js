@@ -1,8 +1,14 @@
 Boid.prototype.pos = [];
 Boid.prototype.vel = [];
+Boid.prototype.turns = [];
 Boid.prototype.angle = [];
 Boid.prototype.neighbors = [];
 Boid.prototype.numBoids = 0;
+
+var angle = 5.0;
+Boid.prototype.rotLimit = Math.cos(angle * Math.PI / 180.0);
+Boid.prototype.rneg = buildRotationMatrix(-angle);
+Boid.prototype.rpos = buildRotationMatrix(angle);
 
 function normalize(v) {
   var lv = Math.sqrt(v[0]*v[0] + v[1]*v[1]);
@@ -13,11 +19,53 @@ function normalize(v) {
   return v;
 }
 
+function dot(v1, v2) {
+  return v1[0]*v2[0] + v1[0]*v2[1]
+}
+
+// find the determinant
+// i is current heading
+// j is desired heading
+// this calculation is simplified due to use of the origin
+function determinant(i, j) {
+  // 1 x1 y1
+  // 1 x2 y2
+  // 1 x3 y3
+
+  // 1  0  0
+  // 1 i0 i1
+  // 1 j0 j1
+
+  // + -  +
+  // - x2 y2
+  // + x3 y3
+  // 00 * x2*y3 - y2*x3
+
+  var det = i[0]*j[1] - i[1]*j[0];
+  return det;
+}
+
+function buildRotationMatrix(degrees) {
+  var radians = degrees * Math.PI / 180.0;
+  var matrix = [
+    [Math.cos(radians), -Math.sin(radians)],
+    [Math.sin(radians), Math.cos(radians)],
+  ];
+  return matrix;
+}
+
+function rotate(v, m) {
+  var x = m[0][0]*v[0] + m[0][1]*v[1]
+  var y = m[1][0]*v[0] + m[1][1]*v[1]
+  return [x, y];
+}
+
 function Boid(p, v, hue) {
   this.id = Boid.prototype.numBoids++;
   this.hue = hue;
   Boid.prototype.pos[this.id] = p;
   Boid.prototype.vel[this.id] = v;
+  Boid.prototype.turns[this.id] = 0;
 }
 
 Boid.prototype.align = function() {
@@ -100,24 +148,52 @@ Boid.prototype.update = function(dt) {
   vm[1] = sv[1] + cv[1] + av[1] + bv[1];
 
   vm = normalize(vm);
+  var d = dot(bv, vm);
+  var tlim = Boid.prototype.turns[this.id];
+  var ts = Math.sign(tlim);
+  tlim *= ts;
+  if (d < Boid.prototype.rotLimit * tlim) {
+    var side = Math.sign(determinant(bv, vm));
+    if (side < 0) {
+      if (side == ts) {
+        vm = rotate(vm, Boid.prototype.rpos);
+        Boid.prototype.turns[this.id] += side;
+        Boid.prototype.turns[this.id] = Math.max(side, -4);
+      } else {
+        Boid.prototype.turns[this.id] = side;
+      }
+    } else {
+      if (side == ts) {
+        vm = rotate(vm, Boid.prototype.rneg);
+        Boid.prototype.turns[this.id] += side;
+        Boid.prototype.turns[this.id] = Math.min(side, 4);
+      } else {
+        Boid.prototype.turns[this.id] = side;
+      }
+    }
+  }
   Boid.prototype.vel[this.id] = vm;
+}
 
-  // update position
+Boid.prototype.move = function(context) {
   Boid.prototype.pos[this.id][0] += Boid.prototype.vel[this.id][0];
   Boid.prototype.pos[this.id][1] += Boid.prototype.vel[this.id][1];
 
+  var width = context.canvas.width - 0;
+  var height = context.canvas.height - 0;
+
   var bx = Boid.prototype.pos[this.id][0];
-  if (bx > 495) {
-    Boid.prototype.pos[this.id][0] = bx - 490;
-  } else if (bx < 5) {
-    Boid.prototype.pos[this.id][0] = bx + 490;
+  if (bx > width) {
+    Boid.prototype.pos[this.id][0] = bx - width;
+  } else if (bx < 0) {
+    Boid.prototype.pos[this.id][0] = bx + width;
   }
 
   var by = Boid.prototype.pos[this.id][1];
-  if (by > 495) {
-    Boid.prototype.pos[this.id][1] = by - 490;
-  } else if (by < 5) {
-    Boid.prototype.pos[this.id][1] = by + 490;
+  if (by > height) {
+    Boid.prototype.pos[this.id][1] = by - height;
+  } else if (by < 0) {
+    Boid.prototype.pos[this.id][1] = by + height;
   }
 }
 
@@ -143,7 +219,6 @@ Boid.prototype.draw = function(context) {
       context.arc(nx, ny, 2, 0, 2*Math.PI, false);
       context.fillStyle = "#000000";
       context.stroke();
-
     }
   }
 
@@ -156,10 +231,6 @@ Boid.prototype.draw = function(context) {
     context.lineTo(x+vel[0]*dist, y+vel[1]*dist);
     context.stroke();
   }
-
-  // context.font = '6pt Courier';
-  // context.fillStyle = "#000000";
-  // context.fillText(this.id, x-5, y-5);
 }
 
 function Flock() {
@@ -168,6 +239,7 @@ function Flock() {
 Flock.prototype.setTarget = function(boid) {
 }
 
+// TODO break on NaNs in ps (esp when limiting neighbors by distance)
 function projector(i, id, ps, nns, nn) {
   var ll = Math.max(i - nn, 0);
   var ul = Math.min(i + nn, numBoids);

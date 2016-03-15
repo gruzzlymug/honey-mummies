@@ -18,6 +18,9 @@
       var context = canvas.getContext('2d');
       var last = performance.now();
 
+      context.canvas.width = window.innerWidth;
+      context.canvas.height = window.innerHeight;
+
       var t = 0;
       var dv = [0, 0];
       var dp = [0, 0];
@@ -55,18 +58,23 @@
         last = timestamp;
         var dt = progress / 100;
 
+        ++frame;
+
         context.clearRect(0, 0, canvas.width, canvas.height);
+
+        // context.font = '16pt Futura';
+        // context.fillStyle = "#000000";
+        // context.fillText("honeymummies.com", 1, 20);
 
         f.update(dt);
 
         for (var idxBoid = 0; idxBoid < numBoids; ++idxBoid) {
-          b[idxBoid].update(dt);
+          if (frame % 4 == 0) {
+            b[idxBoid].update(dt);
+          }
+          b[idxBoid].move(context);
           b[idxBoid].draw(context);
         }
-
-        context.strokeStyle = "#000000";
-        context.rect(2, 2, 498, 498);
-        context.stroke();
 
         window.requestAnimationFrame(step);
       }
@@ -74,6 +82,7 @@
       var numBoids = 225;
       var numRows = 15;
       var b = [];
+      var frame = 0;
       for (var biy = 0; biy < numRows; ++biy) {
         for (var bix = 0; bix < numBoids/numRows; ++bix) {
           var p = [biy % 2 * 10 + bix * 30 + 40, biy * 30 + 40];
