@@ -23,28 +23,6 @@ function dot(v1, v2) {
   return v1[0]*v2[0] + v1[0]*v2[1]
 }
 
-// find the determinant
-// i is current heading
-// j is desired heading
-// this calculation is simplified due to use of the origin
-function determinant(i, j) {
-  // 1 x1 y1
-  // 1 x2 y2
-  // 1 x3 y3
-
-  // 1  0  0
-  // 1 i0 i1
-  // 1 j0 j1
-
-  // + -  +
-  // - x2 y2
-  // + x3 y3
-  // 00 * x2*y3 - y2*x3
-
-  var det = i[0]*j[1] - i[1]*j[0];
-  return det;
-}
-
 function buildRotationMatrix(degrees) {
   var radians = degrees * Math.PI / 180.0;
   var matrix = [
@@ -153,7 +131,10 @@ Boid.prototype.update = function(dt) {
   var ts = Math.sign(tlim);
   tlim *= ts;
   if (d < Boid.prototype.rotLimit * tlim) {
-    var side = Math.sign(determinant(bv, vm));
+    // use the determinant to figure out which way vm points
+    // this calculation is simplified due to use of the origin
+    var determinant = bv[0]*vm[1] - bv[1]*vm[0];
+    var side = Math.sign(determinant);
     if (side < 0) {
       if (side == ts) {
         vm = rotate(vm, Boid.prototype.rpos);
