@@ -292,22 +292,14 @@ function projector(i, id, ps, nearestNeighbors, numNearest) {
 Flock.prototype.update = function(dt) {
   //this.findNeighbors();
 
-  var numBoids = this.boids.length;
-  this.numActive = Math.min(numBoids, this.numActive)
-  if (this.numActive < this.numDesired) {
-    var p = [2 * 10 + 40, 30 + 40];
-    p[0] += Math.random() * 6 - 3;
-    p[1] += Math.random() * 6 - 3;
-
-    // set velocity (aka heading)
-    var v = [(Math.random() - 0.5)/2, (Math.random() - 0.5)/2];
-    v = normalize(v);
-
-    var hue = randomInRange(0, 55, 1);
-    this.boids[numBoids] = new Boid(p, v, hue);
-    ++this.numActive;
+  if (this.frame % 10 == 0) {
+    var numBoids = this.boids.length;
+    this.numActive = Math.min(numBoids, this.numActive)
+    if (this.numActive < this.numDesired) {
+      this.boids[numBoids] = createBoid();
+      ++this.numActive;
+    }
   }
-
   for (var idxBoid = 0; idxBoid < numBoids; ++idxBoid) {
     if (this.frame % 4 == 0) {
       // this.boids[idxBoid].update(dt);
@@ -316,6 +308,19 @@ Flock.prototype.update = function(dt) {
     this.boids[idxBoid].draw(context);
   }
   ++this.frame;
+}
+
+function createBoid() {
+  var p = [2 * 10 + 40, 30 + 40];
+  p[0] += Math.random() * 6 - 3;
+  p[1] += Math.random() * 6 - 3;
+
+  // set velocity (aka heading)
+  var v = [(Math.random() - 0.5)/2, (Math.random() - 0.5)/2];
+  v = normalize(v);
+
+  var hue = randomInRange(0, 55, 1);
+  return new Boid(p, v, hue);
 }
 
 Flock.prototype.findNeighbors = function() {
