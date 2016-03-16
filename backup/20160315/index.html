@@ -45,25 +45,52 @@
         last = timestamp;
         var dt = progress / 100;
 
-        context.fillStyle = "#000000";
-        context.fillRect(0, 0, canvas.width, canvas.height);
-        // context.clearRect(0, 0, canvas.width, canvas.height);
+        ++frame;
+
+        context.clearRect(0, 0, canvas.width, canvas.height);
 
         // context.font = '16pt Futura';
         // context.fillStyle = "#000000";
         // context.fillText("honeymummies.com", 1, 20);
 
         f.update(dt);
-        f.move(context);
-        f.draw(context);
+
+        for (var idxBoid = 0; idxBoid < numBoids; ++idxBoid) {
+          if (frame % 4 == 0) {
+            b[idxBoid].update(dt);
+          }
+          b[idxBoid].move(context);
+          b[idxBoid].draw(context);
+        }
 
         window.requestAnimationFrame(step);
+      }
+
+      var numBoids = 225;
+      var numRows = 15;
+      var b = [];
+      var frame = 0;
+      for (var biy = 0; biy < numRows; ++biy) {
+        for (var bix = 0; bix < numBoids/numRows; ++bix) {
+          var p = [biy % 2 * 10 + bix * 30 + 40, biy * 30 + 40];
+          p[0] += Math.random() * 6 - 3;
+          p[1] += Math.random() * 6 - 3;
+
+          // set velocity (aka heading)
+          var v = [(Math.random() - 0.5)/2, (Math.random() - 0.5)/2];
+          v = normalize(v);
+
+          var hue = randomInRange(0, 55, 1);
+          b[biy*numBoids/numRows+bix] = new Boid(p, v, hue);
+        }
       }
 
       var f = new Flock();
       f.createSource(100, 100);
       f.createSink(400, 400);
       f.createBoids(10);
+
+      // var g = new Flock();
 
       window.requestAnimationFrame(step);
     </script>

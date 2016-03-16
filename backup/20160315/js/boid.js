@@ -237,31 +237,23 @@ Flock.prototype.numBoids = [];
 
 function Flock() {
   this.id = Flock.prototype.numFlocks++;
-  this.numActive = 0;
-  this.numDesired = 0;
-  this.boids = [];
-  this.sources = [];
-  this.sinks = [];
-  this.frame = 0;
   Flock.prototype.boids[this.id] = [];
 }
 
 // TODO support multiple sources
 Flock.prototype.createSource = function(x, y) {
-  var numSources = this.sources.lengeth;
-  this.sources[numSources] = [x, y];
+  Flock.prototype.source[this.id] = [x, y];
 }
 
 Flock.prototype.createSink = function(x, y) {
-  var numSinks = this.sinks.lengeth;
-  this.sinks[numSinks] = [x, y];
+  Flock.prototype.sink[this.id] = [x, y];
 }
 
 // NOTE must have a source
 Flock.prototype.createBoids = function(numBoids) {
-  this.numDesired = numBoids;
+  var source = Flock.prototype.source[this.id]
   for (var bix = 0; bix < numBoids; ++bix) {
-    // var p = source
+    var p = source
   //   // var p = [biy % 2 * 10 + bix * 30 + 40, biy * 30 + 40];
   //   // p[0] += Math.random() * 6 - 3;
   //   // p[1] += Math.random() * 6 - 3;
@@ -287,35 +279,6 @@ function projector(i, id, ps, nearestNeighbors, numNearest) {
     if (pid == id) continue;
     nearestNeighbors.push(pid);
   }
-}
-
-Flock.prototype.update = function(dt) {
-  //this.findNeighbors();
-
-  var numBoids = this.boids.length;
-  this.numActive = Math.min(numBoids, this.numActive)
-  if (this.numActive < this.numDesired) {
-    var p = [2 * 10 + 40, 30 + 40];
-    p[0] += Math.random() * 6 - 3;
-    p[1] += Math.random() * 6 - 3;
-
-    // set velocity (aka heading)
-    var v = [(Math.random() - 0.5)/2, (Math.random() - 0.5)/2];
-    v = normalize(v);
-
-    var hue = randomInRange(0, 55, 1);
-    this.boids[numBoids] = new Boid(p, v, hue);
-    ++this.numActive;
-  }
-
-  for (var idxBoid = 0; idxBoid < numBoids; ++idxBoid) {
-    if (this.frame % 4 == 0) {
-      // this.boids[idxBoid].update(dt);
-    }
-    this.boids[idxBoid].move(context);
-    this.boids[idxBoid].draw(context);
-  }
-  ++this.frame;
 }
 
 Flock.prototype.findNeighbors = function() {
@@ -371,16 +334,22 @@ Flock.prototype.findNeighbors = function() {
   }
 }
 
-Flock.prototype.move = function(context) {
-  var numBoids = this.boids.length;
-  for (var idxBoid = 0; idxBoid < numBoids; ++idxBoid) {
-    this.boids[idxBoid].move(context);
-  }
+Flock.prototype.update = function(dt) {
+  this.findNeighbors();
+
+  // var numBoids = Flock.prototype.boids[this.id].length;
+  // for (var idxBoid = 0; idxBoid < numBoids; ++idxBoid) {
+  //   if (frame % 4 == 0) {
+  //     b[idxBoid].update(dt);
+  //   }
+  //   b[idxBoid].move(context);
+  //   b[idxBoid].draw(context);
+  // }
 }
 
 Flock.prototype.draw = function(context) {
-  var numBoids = this.boids.length;
-  for (var idxBoid = 0; idxBoid < numBoids; ++idxBoid) {
-    this.boids[idxBoid].draw(context);
-  }
+  // var numBoids = Flock.prototype.boids[this.id].length;
+  // for (var idxBoid = 0; idxBoid < numBoids; ++idxBoid) {
+  //   b[idxBoid].draw(context);
+  // }
 }
