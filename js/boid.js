@@ -1,3 +1,10 @@
+//
+// ███   ████▄ ▄█ ██▄
+// █  █  █   █ ██ █  █
+// █ ▀ ▄ █   █ ██ █   █
+// █  ▄▀ ▀████ ▐█ █  █
+// ███          ▐ ███▀
+//
 Boid.prototype.pos = [];
 Boid.prototype.vel = [];
 Boid.prototype.turns = [];
@@ -224,6 +231,7 @@ Boid.prototype.draw = function(context) {
 //
 Flock.prototype.numFlocks = 0;
 Flock.prototype.source = [];
+Flock.prototype.sink = [];
 Flock.prototype.boids = [];
 Flock.prototype.numBoids = [];
 
@@ -235,6 +243,10 @@ function Flock() {
 // TODO support multiple sources
 Flock.prototype.createSource = function(x, y) {
   Flock.prototype.source[this.id] = [x, y];
+}
+
+Flock.prototype.createSink = function(x, y) {
+  Flock.prototype.sink[this.id] = [x, y];
 }
 
 // NOTE must have a source
