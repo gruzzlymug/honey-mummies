@@ -214,20 +214,58 @@ Boid.prototype.draw = function(context) {
   }
 }
 
+//
+// ▄████  █    ████▄ ▄█▄    █  █▀
+// █▀   ▀ █    █   █ █▀ ▀▄  █▄█
+// █▀▀    █    █   █ █   ▀  █▀▄
+// █      ███▄ ▀████ █▄  ▄▀ █  █
+//  █         ▀      ▀███▀    █
+//   ▀                       ▀
+//
+Flock.prototype.numFlocks = 0;
+Flock.prototype.source = [];
+Flock.prototype.boids = [];
+Flock.prototype.numBoids = [];
+
 function Flock() {
+  this.id = Flock.prototype.numFlocks++;
+  Flock.prototype.boids[this.id] = [];
+}
+
+// TODO support multiple sources
+Flock.prototype.createSource = function(x, y) {
+  Flock.prototype.source[this.id] = [x, y];
+}
+
+// NOTE must have a source
+Flock.prototype.createBoids = function(numBoids) {
+  var source = Flock.prototype.source[this.id]
+  for (var bix = 0; bix < numBoids; ++bix) {
+    var p = source
+  //   // var p = [biy % 2 * 10 + bix * 30 + 40, biy * 30 + 40];
+  //   // p[0] += Math.random() * 6 - 3;
+  //   // p[1] += Math.random() * 6 - 3;
+  //
+  //   // set velocity (aka heading)
+    var v = [(Math.random() - 0.5)/2, (Math.random() - 0.5)/2];
+    v = normalize(v);
+
+    var hue = randomInRange(0, 55, 1);
+    Flock.prototype.boids[this.id][bix] = null; //new Boid(p, v, hue);
+  }
 }
 
 Flock.prototype.setTarget = function(boid) {
 }
 
 // TODO break on NaNs in ps (esp when limiting neighbors by distance)
-function projector(i, id, ps, nns, nn) {
-  var ll = Math.max(i - nn, 0);
-  var ul = Math.min(i + nn, numBoids);
-  for (var n = ll; n < ul; ++n) {
-    pid = ps[n] % 1000;
+function projector(i, id, ps, nearestNeighbors, numNearest) {
+  var lowerLimit = Math.max(i - numNearest, 0);
+  var upperLimit = Math.min(i + numNearest, numBoids);
+  for (var idxNeighbor = lowerLimit; idxNeighbor < upperLimit; ++idxNeighbor) {
+    pid = ps[idxNeighbor] % 1000;
     if (pid == id) continue;
-    nns.push(pid);
+    nearestNeighbors.push(pid);
   }
 }
 
@@ -286,7 +324,20 @@ Flock.prototype.findNeighbors = function() {
 
 Flock.prototype.update = function(dt) {
   this.findNeighbors();
+
+  // var numBoids = Flock.prototype.boids[this.id].length;
+  // for (var idxBoid = 0; idxBoid < numBoids; ++idxBoid) {
+  //   if (frame % 4 == 0) {
+  //     b[idxBoid].update(dt);
+  //   }
+  //   b[idxBoid].move(context);
+  //   b[idxBoid].draw(context);
+  // }
 }
 
 Flock.prototype.draw = function(context) {
+  // var numBoids = Flock.prototype.boids[this.id].length;
+  // for (var idxBoid = 0; idxBoid < numBoids; ++idxBoid) {
+  //   b[idxBoid].draw(context);
+  // }
 }
