@@ -13,7 +13,7 @@ Boid.prototype.angle = [];
 Boid.prototype.neighbors = [];
 Boid.prototype.numBoids = 0;
 
-var angle = 5.0;
+var angle = 2.0;
 Boid.prototype.rotLimit = Math.cos(angle * Math.PI / 180.0);
 Boid.prototype.rneg = buildRotationMatrix(-angle);
 Boid.prototype.rpos = buildRotationMatrix(angle);
