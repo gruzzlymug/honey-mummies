@@ -13,7 +13,7 @@ Boid.prototype.angle = [];
 Boid.prototype.neighbors = [];
 Boid.prototype.numBoids = 0;
 
-var angle = 1.25;
+var angle = 22.5;
 Boid.prototype.rotLimit = Math.cos(angle * Math.PI / 180.0);
 Boid.prototype.rneg = buildRotationMatrix(-angle);
 Boid.prototype.rpos = buildRotationMatrix(angle);
@@ -59,8 +59,8 @@ function Boid(p, v, hue) {
 
 Boid.prototype.align = function() {
   // alignment velocity
-  var neighbors = Boid.prototype.neighbors[this.id]
   var av = [0, 0];
+  var neighbors = Boid.prototype.neighbors[this.id]
   var numNeighbors = neighbors.length;
   for (var i = 0; i < numNeighbors; ++i) {
     var nid = neighbors[i];
@@ -105,55 +105,63 @@ Boid.prototype.separate = function() {
 }
 
 Boid.prototype.cohere = function() {
-  var neighbors = Boid.prototype.neighbors[this.id]
-  var goal = [0, 0];
-  var numNeighbors = neighbors.length;
-  for (var i = 0; i < numNeighbors; ++i) {
-    var nid = neighbors[i];
-    var np = Boid.prototype.pos[nid];
-
-    goal[0] += np[0];
-    goal[1] += np[1];
-  }
-  goal[0] /= numNeighbors;
-  goal[1] /= numNeighbors;
-
   var cv = [0, 0];
-  cv[0] = goal[0] - Boid.prototype.pos[this.id][0];
-  cv[1] = goal[1] - Boid.prototype.pos[this.id][1];
-  var cv = normalize(cv);
+  var neighbors = Boid.prototype.neighbors[this.id]
+  var numNeighbors = neighbors.length;
+  if (numNeighbors > 0) {
+    var goal = [0, 0];
+    for (var i = 0; i < numNeighbors; ++i) {
+      var nid = neighbors[i];
+      var np = Boid.prototype.pos[nid];
+
+      goal[0] += np[0];
+      goal[1] += np[1];
+    }
+    goal[0] /= numNeighbors;
+    goal[1] /= numNeighbors;
+
+    cv[0] = goal[0] - Boid.prototype.pos[this.id][0];
+    cv[1] = goal[1] - Boid.prototype.pos[this.id][1];
+    var cv = normalize(cv);
+  }
 
   return cv;
 }
 
+Boid.prototype.gravitate = function() {
+  var gv = [0, 0];
+  var bp = Boid.prototype.pos[this.id];
+  var numSinks = Flock.prototype.sinks.length;
+  for (var idxSink = 0; idxSink < numSinks; ++idxSink) {
+    sinkPos = Flock.prototype.sinks[idxSink];
+    toSink = [0, 0];
+    toSink[0] = sinkPos[0] - bp[0];
+    toSink[1] = sinkPos[1] - bp[1];
+    if (toSink[0]*toSink[0] + toSink[1]*toSink[1] < 2000) {
+      gv = normalize(toSink);
+    }
+  }
+
+  return gv;
+}
+
 Boid.prototype.update = function(dt) {
   // velocity modifiers
-  // var sv = this.separate();
-  // var cv = this.cohere();
-  // var av = this.align();
+  var sv = this.separate();
+  var cv = this.cohere();
+  var av = this.align();
+  var gv = this.gravitate();
   var bv = Boid.prototype.vel[this.id];
+
   var vm = [0, 0];
-  // vm[0] = sv[0] + cv[0] + av[0] + bv[0];
-  // vm[1] = sv[1] + cv[1] + av[1] + bv[1];
-
-  var bp = Boid.prototype.pos[this.id];
-  sinkPos = [200, 200];
-  toSink = [0, 0];
-  toSink[0] = sinkPos[0] - bp[0];
-  toSink[1] = sinkPos[1] - bp[1];
-  toSink = normalize(toSink);
-
-  var toSinkFactor = 1.0;
-  vm[0] = bv[0] + toSink[0] * toSinkFactor;
-  vm[1] = bv[1] + toSink[1] * toSinkFactor;
-
-  // early out if modifier doesn't modify (also avoids freeze glitch)
-  // if (dot(vm, vm) < nearlyZero) {
-  //   return;
-  // }
+  var gf = 0.5;
+  vm[0] = 1*sv[0] + cv[0] + av[0] + gf*gv[0] + bv[0];
+  vm[1] = 1*sv[1] + cv[1] + av[1] + gf*gv[1] + bv[1];
   vm = normalize(vm);
-  Boid.prototype.dvel[this.id][0] = toSink[0];
-  Boid.prototype.dvel[this.id][1] = toSink[1];
+
+  Boid.prototype.dvel[this.id][0] = vm[0];
+  Boid.prototype.dvel[this.id][1] = vm[1];
+
   var d = dot(bv, vm);
   var tlim = Boid.prototype.turns[this.id];
   var ts = Math.sign(tlim);
@@ -217,15 +225,6 @@ Boid.prototype.draw = function(context) {
   var x = Boid.prototype.pos[this.id][0];
   var y = Boid.prototype.pos[this.id][1];
 
-  context.beginPath();
-  context.arc(x, y, 2, 0, 2*Math.PI, false);
-  if (false) {
-    context.fillStyle = "hsla(128,50%,50%,1)";
-  } else {
-    context.fillStyle = "hsla(" + this.hue + ",100%,50%,1)";
-  }
-  context.fill();
-
   if (false) {
     for (var ni = 0; ni < Boid.prototype.neighbors[this.id].length; ++ni) {
       var nid = Boid.prototype.neighbors[this.id][ni];
@@ -238,26 +237,38 @@ Boid.prototype.draw = function(context) {
     }
   }
 
+  // draw heading
   if (true) {
-    context.strokeStyle = "hsla(" + this.hue + ",100%,50%,1)";
+    context.strokeStyle = "white"; //"hsla(" + this.hue + ",100%,50%,1)";
     context.beginPath();
     context.moveTo(x, y);
     var vel = Boid.prototype.vel[this.id];
-    var dist = 15;
-    context.lineTo(x+vel[0]*dist, y+vel[1]*dist);
-    context.stroke();
-  }
-  // desired velocity
-  if (true) {
-    context.strokeStyle = "hsla(" + 255*255 + ",100%,50%,1)";
-    context.beginPath();
-    context.moveTo(x, y);
-    var vel = Boid.prototype.dvel[this.id];
     var dist = 10;
     context.lineTo(x+vel[0]*dist, y+vel[1]*dist);
     context.stroke();
   }
- }
+
+  // desired velocity
+  if (true) {
+    context.strokeStyle = "grey"; //"hsla(" + 255*255 + ",100%,50%,1)";
+    context.beginPath();
+    context.moveTo(x, y);
+    var vel = Boid.prototype.dvel[this.id];
+    var dist = 10;
+    context.lineTo(x-vel[0]*dist, y-vel[1]*dist);
+    context.stroke();
+  }
+
+  // body
+  context.beginPath();
+  context.arc(x, y, 2, 0, 2*Math.PI, false);
+  if (true) {
+    context.fillStyle = "red"; //"hsla(128,50%,50%,1)";
+  } else {
+    context.fillStyle = "hsla(" + this.hue + ",100%,50%,1)";
+  }
+  context.fill();
+}
 
 //
 // ▄████  █    ████▄ ▄█▄    █  █▀
@@ -269,7 +280,7 @@ Boid.prototype.draw = function(context) {
 //
 Flock.prototype.numFlocks = 0;
 Flock.prototype.source = [];
-Flock.prototype.sink = [];
+Flock.prototype.sinks = [];
 Flock.prototype.boids = [];
 Flock.prototype.numBoids = [];
 
@@ -291,26 +302,14 @@ Flock.prototype.createSource = function(x, y) {
 }
 
 Flock.prototype.createSink = function(x, y) {
-  var numSinks = this.sinks.length;
-  this.sinks[numSinks] = [x, y];
+  // var numSinks = this.sinks.length;
+  // this.sinks[numSinks] = [x, y];
+  var numSinks = Flock.prototype.sinks.length;
+  Flock.prototype.sinks[numSinks] = [x, y];
 }
 
-// NOTE must have a source
 Flock.prototype.createBoids = function(numBoids) {
   this.numDesired = numBoids;
-  for (var bix = 0; bix < numBoids; ++bix) {
-    // var p = source
-  //   // var p = [biy % 2 * 10 + bix * 30 + 40, biy * 30 + 40];
-  //   // p[0] += Math.random() * 6 - 3;
-  //   // p[1] += Math.random() * 6 - 3;
-  //
-  //   // set velocity (aka heading)
-    var v = [(Math.random() - 0.5)/2, (Math.random() - 0.5)/2];
-    v = normalize(v);
-
-    // var hue = randomInRange(0, 55, 1);
-    // Flock.prototype.boids[this.id][bix] = null; //new Boid(p, v, hue);
-  }
 }
 
 Flock.prototype.setTarget = function(boid) {
@@ -319,7 +318,7 @@ Flock.prototype.setTarget = function(boid) {
 // TODO break on NaNs in ps (esp when limiting neighbors by distance)
 function projector(i, id, ps, nearestNeighbors, numNearest) {
   var lowerLimit = Math.max(i - numNearest, 0);
-  var upperLimit = Math.min(i + numNearest, numBoids);
+  var upperLimit = Math.min(i + numNearest, Boid.prototype.numBoids);
   for (var idxNeighbor = lowerLimit; idxNeighbor < upperLimit; ++idxNeighbor) {
     pid = ps[idxNeighbor] % 1000;
     if (pid == id) continue;
@@ -328,8 +327,6 @@ function projector(i, id, ps, nearestNeighbors, numNearest) {
 }
 
 Flock.prototype.update = function(dt) {
-  //this.findNeighbors();
-
   var numBoids = this.boids.length;
   if (this.frame % 10 == 0) {
     this.numActive = Math.min(numBoids, this.numActive)
@@ -341,8 +338,9 @@ Flock.prototype.update = function(dt) {
     }
   }
 
-  for (var idxBoid = 0; idxBoid < this.numActive; ++idxBoid) {
-    if (this.frame % 5 == 0) {
+  if (this.frame % 5 == 0) {
+    this.findNeighbors();
+    for (var idxBoid = 0; idxBoid < this.numActive; ++idxBoid) {
       this.boids[idxBoid].update(dt);
     }
   }
@@ -409,7 +407,10 @@ Flock.prototype.findNeighbors = function() {
       var dx = bp[0] - np[0];
       var dy = bp[1] - np[1];
       // TODO limit neighbors to range
-      c4n.push(neighborId);
+      var dsqr = dx*dx + dy*dy;
+      if (dsqr < 300*300) {
+        c4n.push(neighborId);
+      }
     }
     Boid.prototype.neighbors[i] = c4n;
   }
