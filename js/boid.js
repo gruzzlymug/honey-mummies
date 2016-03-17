@@ -13,7 +13,7 @@ Boid.prototype.angle = [];
 Boid.prototype.neighbors = [];
 Boid.prototype.numBoids = 0;
 
-var angle = 2.0;
+var angle = 0.25;
 Boid.prototype.rotLimit = Math.cos(angle * Math.PI / 180.0);
 Boid.prototype.rneg = buildRotationMatrix(-angle);
 Boid.prototype.rpos = buildRotationMatrix(angle);
@@ -170,6 +170,7 @@ Boid.prototype.update = function(dt) {
         Boid.prototype.turns[this.id] = Math.max(side, -4);
       } else {
         Boid.prototype.turns[this.id] = side;
+        return;
       }
     } else {
       if (side == ts) {
@@ -178,6 +179,7 @@ Boid.prototype.update = function(dt) {
         Boid.prototype.turns[this.id] = Math.min(side, 4);
       } else {
         Boid.prototype.turns[this.id] = side;
+        return;
       }
     }
   }
@@ -193,21 +195,21 @@ Boid.prototype.move = function(context) {
   Boid.prototype.pos[this.id][0] += (Boid.prototype.vel[this.id][0] * velocityFactor);
   Boid.prototype.pos[this.id][1] += (Boid.prototype.vel[this.id][1] * velocityFactor);
 
-  var width = context.canvas.width - 0;
-  var height = context.canvas.height - 0;
+  var width = context.canvas.width - 1;
+  var height = context.canvas.height - 1;
 
   var bx = Boid.prototype.pos[this.id][0];
-  if (bx > width) {
-    Boid.prototype.pos[this.id][0] = bx - width;
+  if (bx >= width) {
+    Boid.prototype.pos[this.id][0] = 0; // bx - width;
   } else if (bx < 0) {
-    Boid.prototype.pos[this.id][0] = bx + width;
+    Boid.prototype.pos[this.id][0] = width; // bx + width;
   }
 
   var by = Boid.prototype.pos[this.id][1];
-  if (by > height) {
-    Boid.prototype.pos[this.id][1] = by - height;
+  if (by >= height) {
+    Boid.prototype.pos[this.id][1] = 0; // by - height;
   } else if (by < 0) {
-    Boid.prototype.pos[this.id][1] = by + height;
+    Boid.prototype.pos[this.id][1] = height; // by + height;
   }
 }
 
@@ -241,7 +243,7 @@ Boid.prototype.draw = function(context) {
     context.beginPath();
     context.moveTo(x, y);
     var vel = Boid.prototype.vel[this.id];
-    var dist = 25;
+    var dist = 15;
     context.lineTo(x+vel[0]*dist, y+vel[1]*dist);
     context.stroke();
   }
@@ -251,7 +253,7 @@ Boid.prototype.draw = function(context) {
     context.beginPath();
     context.moveTo(x, y);
     var vel = Boid.prototype.dvel[this.id];
-    var dist = 20;
+    var dist = 10;
     context.lineTo(x+vel[0]*dist, y+vel[1]*dist);
     context.stroke();
   }
@@ -306,8 +308,8 @@ Flock.prototype.createBoids = function(numBoids) {
     var v = [(Math.random() - 0.5)/2, (Math.random() - 0.5)/2];
     v = normalize(v);
 
-    var hue = randomInRange(0, 55, 1);
-    Flock.prototype.boids[this.id][bix] = null; //new Boid(p, v, hue);
+    // var hue = randomInRange(0, 55, 1);
+    // Flock.prototype.boids[this.id][bix] = null; //new Boid(p, v, hue);
   }
 }
 
@@ -328,21 +330,21 @@ function projector(i, id, ps, nearestNeighbors, numNearest) {
 Flock.prototype.update = function(dt) {
   //this.findNeighbors();
 
-  if (this.frame % 10 == 0) {
-    var numBoids = this.boids.length;
+  var numBoids = this.boids.length;
+  // if (this.frame % 10 == 0) {
     this.numActive = Math.min(numBoids, this.numActive)
     if (this.numActive < this.numDesired) {
-      this.boids[numBoids] = createBoid();
       ++this.numActive;
+      if (this.numActive > numBoids) {
+        this.boids[numBoids] = createBoid();
+      }
     }
-  }
+  // }
 
-  for (var idxBoid = 0; idxBoid < numBoids; ++idxBoid) {
-    if (this.frame % 1 == 0) {
+  for (var idxBoid = 0; idxBoid < this.numActive; ++idxBoid) {
+    // if (this.frame % 5 == 0) {
       this.boids[idxBoid].update(dt);
-    }
-    this.boids[idxBoid].move(context);
-    this.boids[idxBoid].draw(context);
+    // }
   }
   ++this.frame;
 }
@@ -353,8 +355,7 @@ function createBoid() {
   p[1] += Math.random() * 6 - 3;
 
   // set velocity (aka heading)
-  // var v = [(Math.random() - 0.5)/2, (Math.random() - 0.5)/2];
-  var v = [1, 1];
+  var v = [(Math.random() - 0.5), (Math.random() - 0.5)];
   v = normalize(v);
 
   var hue = randomInRange(0, 55, 1);
