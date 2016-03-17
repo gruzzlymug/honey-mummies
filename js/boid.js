@@ -7,6 +7,7 @@
 //
 Boid.prototype.pos = [];
 Boid.prototype.vel = [];
+Boid.prototype.dvel = [];
 Boid.prototype.turns = [];
 Boid.prototype.angle = [];
 Boid.prototype.neighbors = [];
@@ -17,9 +18,11 @@ Boid.prototype.rotLimit = Math.cos(angle * Math.PI / 180.0);
 Boid.prototype.rneg = buildRotationMatrix(-angle);
 Boid.prototype.rpos = buildRotationMatrix(angle);
 
+var nearlyZero = 0.0001;
+
 function normalize(v) {
   var lv = Math.sqrt(v[0]*v[0] + v[1]*v[1]);
-  if (Math.abs(lv) > 0.0001) {
+  if (Math.abs(lv) > nearlyZero) {
     v[0] /= lv;
     v[1] /= lv;
   }
@@ -27,7 +30,7 @@ function normalize(v) {
 }
 
 function dot(v1, v2) {
-  return v1[0]*v2[0] + v1[0]*v2[1]
+  return v1[0]*v2[0] + v1[1]*v2[1]
 }
 
 function buildRotationMatrix(degrees) {
@@ -50,6 +53,7 @@ function Boid(p, v, hue) {
   this.hue = hue;
   Boid.prototype.pos[this.id] = p;
   Boid.prototype.vel[this.id] = v;
+  Boid.prototype.dvel[this.id] = [0, 0];
   Boid.prototype.turns[this.id] = 0;
 }
 
@@ -124,27 +128,44 @@ Boid.prototype.cohere = function() {
 
 Boid.prototype.update = function(dt) {
   // velocity modifiers
-  var sv = this.separate();
-  var cv = this.cohere();
-  var av = this.align();
+  // var sv = this.separate();
+  // var cv = this.cohere();
+  // var av = this.align();
   var bv = Boid.prototype.vel[this.id];
   var vm = [0, 0];
-  vm[0] = sv[0] + cv[0] + av[0] + bv[0];
-  vm[1] = sv[1] + cv[1] + av[1] + bv[1];
+  // vm[0] = sv[0] + cv[0] + av[0] + bv[0];
+  // vm[1] = sv[1] + cv[1] + av[1] + bv[1];
 
+  var bp = Boid.prototype.pos[this.id];
+  sinkPos = [200, 200];
+  toSink = [0, 0];
+  toSink[0] = sinkPos[0] - bp[0];
+  toSink[1] = sinkPos[1] - bp[1];
+  toSink = normalize(toSink);
+
+  var toSinkFactor = 1.0;
+  vm[0] = bv[0] + toSink[0] * toSinkFactor;
+  vm[1] = bv[1] + toSink[1] * toSinkFactor;
+
+  // early out if modifier doesn't modify (also avoids freeze glitch)
+  // if (dot(vm, vm) < nearlyZero) {
+  //   return;
+  // }
   vm = normalize(vm);
+  Boid.prototype.dvel[this.id][0] = toSink[0];
+  Boid.prototype.dvel[this.id][1] = toSink[1];
   var d = dot(bv, vm);
   var tlim = Boid.prototype.turns[this.id];
   var ts = Math.sign(tlim);
   tlim *= ts;
-  if (d < Boid.prototype.rotLimit * tlim) {
+  if (d < Boid.prototype.rotLimit * 1) { //tlim) {
     // use the determinant to figure out which way vm points
     // this calculation is simplified due to use of the origin
     var determinant = bv[0]*vm[1] - bv[1]*vm[0];
     var side = Math.sign(determinant);
-    if (side < 0) {
+    if (side > 0) {
       if (side == ts) {
-        vm = rotate(vm, Boid.prototype.rpos);
+        vm = rotate(bv, Boid.prototype.rpos);
         Boid.prototype.turns[this.id] += side;
         Boid.prototype.turns[this.id] = Math.max(side, -4);
       } else {
@@ -152,7 +173,7 @@ Boid.prototype.update = function(dt) {
       }
     } else {
       if (side == ts) {
-        vm = rotate(vm, Boid.prototype.rneg);
+        vm = rotate(bv, Boid.prototype.rneg);
         Boid.prototype.turns[this.id] += side;
         Boid.prototype.turns[this.id] = Math.min(side, 4);
       } else {
@@ -160,12 +181,17 @@ Boid.prototype.update = function(dt) {
       }
     }
   }
+  // never allow velocity to go to zero (prevents 'freeze' glitch)
+  if (dot(vm, vm) < nearlyZero) {
+    return;
+  }
   Boid.prototype.vel[this.id] = vm;
 }
 
 Boid.prototype.move = function(context) {
-  Boid.prototype.pos[this.id][0] += Boid.prototype.vel[this.id][0];
-  Boid.prototype.pos[this.id][1] += Boid.prototype.vel[this.id][1];
+  var velocityFactor = 1.0;
+  Boid.prototype.pos[this.id][0] += (Boid.prototype.vel[this.id][0] * velocityFactor);
+  Boid.prototype.pos[this.id][1] += (Boid.prototype.vel[this.id][1] * velocityFactor);
 
   var width = context.canvas.width - 0;
   var height = context.canvas.height - 0;
@@ -215,11 +241,21 @@ Boid.prototype.draw = function(context) {
     context.beginPath();
     context.moveTo(x, y);
     var vel = Boid.prototype.vel[this.id];
-    var dist = 4;
+    var dist = 25;
     context.lineTo(x+vel[0]*dist, y+vel[1]*dist);
     context.stroke();
   }
-}
+  // desired velocity
+  if (true) {
+    context.strokeStyle = "hsla(" + 255*255 + ",100%,50%,1)";
+    context.beginPath();
+    context.moveTo(x, y);
+    var vel = Boid.prototype.dvel[this.id];
+    var dist = 20;
+    context.lineTo(x+vel[0]*dist, y+vel[1]*dist);
+    context.stroke();
+  }
+ }
 
 //
 // ▄████  █    ████▄ ▄█▄    █  █▀
@@ -248,12 +284,12 @@ function Flock() {
 
 // TODO support multiple sources
 Flock.prototype.createSource = function(x, y) {
-  var numSources = this.sources.lengeth;
+  var numSources = this.sources.length;
   this.sources[numSources] = [x, y];
 }
 
 Flock.prototype.createSink = function(x, y) {
-  var numSinks = this.sinks.lengeth;
+  var numSinks = this.sinks.length;
   this.sinks[numSinks] = [x, y];
 }
 
@@ -300,9 +336,10 @@ Flock.prototype.update = function(dt) {
       ++this.numActive;
     }
   }
+
   for (var idxBoid = 0; idxBoid < numBoids; ++idxBoid) {
-    if (this.frame % 4 == 0) {
-      // this.boids[idxBoid].update(dt);
+    if (this.frame % 1 == 0) {
+      this.boids[idxBoid].update(dt);
     }
     this.boids[idxBoid].move(context);
     this.boids[idxBoid].draw(context);
@@ -316,7 +353,8 @@ function createBoid() {
   p[1] += Math.random() * 6 - 3;
 
   // set velocity (aka heading)
-  var v = [(Math.random() - 0.5)/2, (Math.random() - 0.5)/2];
+  // var v = [(Math.random() - 0.5)/2, (Math.random() - 0.5)/2];
+  var v = [1, 1];
   v = normalize(v);
 
   var hue = randomInRange(0, 55, 1);
