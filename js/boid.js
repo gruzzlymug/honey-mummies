@@ -237,6 +237,8 @@ Boid.prototype.draw = function(context) {
     }
   }
 
+  var depth = (this.id % 4 + 1) * 0.2 + 0.6
+
   // draw heading
   if (true) {
     context.strokeStyle = "white"; //"hsla(" + this.hue + ",100%,50%,1)";
@@ -244,18 +246,18 @@ Boid.prototype.draw = function(context) {
     context.moveTo(x, y);
     var vel = Boid.prototype.vel[this.id];
     var dist = 10;
-    context.lineTo(x+vel[0]*dist, y+vel[1]*dist);
+    context.lineTo(x+vel[0]*dist * depth, y+vel[1]*dist * depth);
     context.stroke();
   }
 
   // desired velocity
   if (true) {
-    context.strokeStyle = "grey"; //"hsla(" + 255*255 + ",100%,50%,1)";
+    context.strokeStyle = "gray"; //"hsla(" + 255*255 + ",100%,50%,1)";
     context.beginPath();
     context.moveTo(x, y);
     var vel = Boid.prototype.dvel[this.id];
     var dist = 10;
-    context.lineTo(x-vel[0]*dist, y-vel[1]*dist);
+    context.lineTo(x-vel[0]*dist * depth, y-vel[1]*dist * depth);
     context.stroke();
   }
 
@@ -313,6 +315,10 @@ Flock.prototype.createBoids = function(numBoids) {
 }
 
 Flock.prototype.setTarget = function(boid) {
+}
+
+Flock.prototype.toggleHidden = function() {
+  this.debug = !this.debug;
 }
 
 // TODO break on NaNs in ps (esp when limiting neighbors by distance)
@@ -424,8 +430,27 @@ Flock.prototype.move = function(context) {
 }
 
 Flock.prototype.draw = function(context) {
+  // boids
   var numBoids = this.boids.length;
   for (var idxBoid = 0; idxBoid < numBoids; ++idxBoid) {
     this.boids[idxBoid].draw(context);
+  }
+
+  // sinks
+  if (this.debug) {
+    context.fillStyle = "darkslategray";
+    var numSinks = Flock.prototype.sinks.length;
+    for (var idxSink = 0; idxSink < numSinks; ++idxSink) {
+      var x = Flock.prototype.sinks[idxSink][0];
+      var y = Flock.prototype.sinks[idxSink][1];
+      context.beginPath();
+      context.arc(x, y, 6, 0, 2*Math.PI, false);
+      context.fill();
+    }
+
+    context.font = '16pt Futura';
+    context.fillStyle = "white";
+    context.fillText("boids: " + this.numActive, 1, 20);
+
   }
 }

@@ -72,6 +72,8 @@
       f.createSink(200, 800);
       f.createBoids(400);
 
+      canvas.addEventListener('click', function() { f.toggleHidden(); }, false);
+
       window.requestAnimationFrame(step);
     </script>
   </body>
