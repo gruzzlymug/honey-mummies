@@ -1,0 +1,14 @@
+/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4; c-file-style: "linux" -*- */
+#include "boid.h"
+
+namespace HoneyMummies
+{
+    Boid::Boid( HoneyMummiesParams & ar_params )
+    {}
+
+    Boid::~Boid()
+    {}
+
+    Boid::update_position()
+    {}
+}
