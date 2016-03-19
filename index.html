@@ -54,7 +54,7 @@
         last = timestamp;
         var dt = progress / 100;
 
-        context.fillStyle = "cornflowerblue";
+        context.fillStyle = "deepskyblue";
         context.fillRect(0, 0, canvas.width, canvas.height);
         // context.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -62,64 +62,151 @@
         f.move(context);
         f.draw(context);
 
-        drawUI();
+        drawUI(context);
 
         window.requestAnimationFrame(step);
       }
 
-      function drawUI() {
-        if (menuFsm.current == 'active') {
-          context.font = '12pt Futura';
-          context.fillStyle = "white";
-          context.fillText(menuFsm.current, 1, 20);
-          context.fillText(uiText, 1, 40);
+      function drawUI(context) {
+        drawMenu(context);
+      }
 
+      function drawMenu(context) {
+        switch (menuFsm.current) {
+          case 'visible':
+            context.fillStyle = user ? "lightskyblue" : "darkred";
+            context.beginPath();
+            context.arc(8, 8, 6, 0, 2*Math.PI, false);
+            context.fill();
+            break;
+          case 'active':
+            if (user) {
+              context.fillStyle = "darkred";
+              context.beginPath();
+              context.arc(context.canvas.width - 8, 8, 6, 0, 2*Math.PI, false);
+              context.fill();
 
-          context.font = '8pt Futura';
-          context.fillStyle = "white";
-          var boidCounterText = "boids: " + f.numActive;
-          var textDim = context.measureText(boidCounterText)
-          context.fillText(boidCounterText, 1, context.canvas.height - 2);
+              context.fillStyle = "lightskyblue";
+              uiText = user.Hello;
+            } else {
+              if (uiText.length < 4) {
+                context.fillStyle = "gold";
+              } else {
+                context.fillStyle = "goldenrod";
+              }
+            }
+            for (var i = 0; i < 4; ++i) {
+              context.beginPath();
+              context.arc(8 + i * 16, 8, 6, 0, 2*Math.PI, false);
+              context.fill();
+            }
+
+            context.font = '8pt Futura';
+            context.fillStyle = user ? "black" : "darkred";
+            if (uiText.length < 4) {
+              for (var i = 0; i < uiText.length; ++i) {
+                var letter = uiText[i];
+                var w = context.measureText(letter);
+                var o = 8 - w.width / 2.0;
+                context.fillText(letter, o + (i * 16), 12);
+              }
+            } else if (uiText.length < 8) {
+              for (var i = uiText.length % 4; i < 4; ++i) {
+                var letter = uiText[i];
+                var w = context.measureText(letter);
+                var o = 8 - w.width / 2.0;
+                context.fillText(letter, o + (i * 16), 12);
+              }
+            }
+            break;
+          default:
+            // do nothing
+            return;
         }
       }
 
       function handleKeyDown(e) {
+        if (user) {
+          return;
+        }
+
         var key = e.keyCode;
         if (key == 8) {
           uiText = uiText.substring(0, uiText.length - 1);
           return false;
         }
-        // uiText += String.fromCharCode((96<=key && key<=105)? key-48 : key);
-        uiText += String.fromCharCode(key);
+        uiText += String.fromCharCode((96<=key && key<=105)? key-48 : key);
+
+        if (uiText.length > 7) {
+          var username = uiText.substring(0, 4);
+          var password = uiText.substring(4, 8);
+          submitCredentials(username, password);
+        }
       }
 
       function handleMouseClick(e) {
-        getMousePos(e);
+        // menu
+        if (menuFsm.current == 'active') {
+          if (user) {
+            if (mouseY <= 40 && mouseX >= e.target.offsetWidth - 40) {
+              user = null;
+              menuFsm.hide();
+              return;
+            }
+          }
+        }
 
-        Flock.prototype.sources[0][0] = mouseX;
-        Flock.prototype.sources[0][1] = mouseY;
+        if (menuFsm.current == 'hidden' && mouseY <= 40 && mouseX <= 40) {
+          menuFsm.show();
+        }
 
+        if (menuFsm.current == 'visible') {
+          menuFsm.activate();
+          uiText = "";
+        } else if (menuFsm.current != 'hidden'){
+          menuFsm.hide();
+        }
+
+        // debug mode
+        if (mouseY >= e.target.height - 40) {
+          f.toggleDebug();
+        }
+      }
+
+      function submitCredentials(username, password) {
         var data = {
-          operation: "create"
+          "name": username
         };
 
-        f.toggleHidden();
-        menuFsm.current == 'hidden' ? menuFsm.open() : menuFsm.close()
+        $.ajax({
+          url: "https://shjsc38xsl.execute-api.us-west-2.amazonaws.com/prod/honeymummiesresource",
+          type: "POST",
+          crossDomain: true,
+          contentType: 'application/json',
+          data: JSON.stringify(data),
+          dataType: 'json',
+          success: function(data) {
+            console.log('SUCCESS:' + data);
+            user = data;
+            uiText = "";
+          },
+          error: function(xhr, ajaxOptions, thrownError) {
+            console.log('ERROR: Invalid credentials');
+            user = null;
+            uiText = "";
+          }
+        });
+      }
 
-        if (false) {
-          $.ajax({
-            url: "https://shjsc38xsl.execute-api.us-west-2.amazonaws.com/prod/honeymummiesresource",
-            type: "GET",
-            crossDomain: true,
-            contentType: 'application/json',
-            success: function(data) {
-              alert(data);
-            },
-            error: function(xhr, ajaxOptions, thrownError) {
-              // TODO improve error handling
-              consoleo.log('ERROR');
-            }
-          });
+      function handleMouseMove(e) {
+        getMousePos(e);
+
+        if ((mouseY <= 40) && (mouseX <= 40)) {
+          if (menuFsm.current == 'hidden') {
+            menuFsm.show();
+          }
+        } else if (menuFsm.current == 'visible') {
+          menuFsm.hide();
         }
       }
 
@@ -136,29 +223,36 @@
       var menuFsm = StateMachine.create({
         initial: 'hidden',
         events: [
-          { name: 'open',  from: 'hidden', to: 'active' },
-          { name: 'close', from: 'active', to: 'hidden' }
+          { name: 'show',     from: 'hidden',               to: 'visible' },
+          { name: 'activate', from: 'visible',              to: 'active' },
+          { name: 'hide',     from: ['visible', 'active'],  to: 'hidden' }
         ]
       });
+
+      var user = null;
 
       var mouseX = 0;
       var mouseY = 0;
 
       var f = new Flock();
-      f.createSource(context.canvas.width / 2, context.canvas.height / 2);
-      // f.createSource(context.canvas.width / 2, context.canvas.height - 20);
-      // f.createSource(context.canvas.width / 2, 20);
-      // f.createSource(context.canvas.width - 20, context.canvas.height / 2);
-      // f.createSource(20, context.canvas.height / 2);
-      var sinkOffset = 40;
-      f.createSink(sinkOffset, sinkOffset);
-      f.createSink(context.canvas.width - sinkOffset, sinkOffset);
-      f.createSink(sinkOffset, context.canvas.height - sinkOffset);
-      f.createSink(context.canvas.width - sinkOffset, context.canvas.height - sinkOffset);
+
+      var ccw = context.canvas.width;
+      var cch = context.canvas.height;
+      var sinkOffsetX = ccw / 4;
+      var sinkOffsetY = cch / 4;
+
+      f.createSource(ccw / 2, cch / 2);
+
+      f.createSink(sinkOffsetX, sinkOffsetY);
+      f.createSink(ccw - sinkOffsetX, sinkOffsetY);
+      f.createSink(sinkOffsetX, cch - sinkOffsetY);
+      f.createSink(ccw - sinkOffsetX, cch - sinkOffsetY);
+
       f.createBoids(500);
 
       canvas.addEventListener('keydown', handleKeyDown, false);
       canvas.addEventListener('click', handleMouseClick, false);
+      canvas.addEventListener('mousemove', handleMouseMove, false);
 
       window.requestAnimationFrame(step);
     </script>

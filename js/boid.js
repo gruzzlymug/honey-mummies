@@ -137,7 +137,8 @@ Boid.prototype.gravitate = function() {
     toSink = [0, 0];
     toSink[0] = sinkPos[0] - bp[0];
     toSink[1] = sinkPos[1] - bp[1];
-    if (toSink[0]*toSink[0] + toSink[1]*toSink[1] < 2000) {
+    var threshold = (Flock.prototype.debug ? 20000 : 2000);
+    if (toSink[0]*toSink[0] + toSink[1]*toSink[1] < threshold) {
       gv = normalize(toSink);
     }
   }
@@ -330,7 +331,7 @@ Flock.prototype.createBoids = function(numBoids) {
 Flock.prototype.setTarget = function(boid) {
 }
 
-Flock.prototype.toggleHidden = function() {
+Flock.prototype.toggleDebug = function() {
   Flock.prototype.debug = !Flock.prototype.debug;
 }
 
@@ -400,8 +401,14 @@ Flock.prototype.findNeighbors = function() {
 
   for (var i = 0; i < numBoids; ++i) {
     var xid = xs[i] % 1000;
+    if (xnn[xid] === undefined) {
+      var break_here = true;
+    }
     projector(i, xid, xs, xnn[xid], 4);
     var yid = ys[i] % 1000;
+    if (ynn[yid] === undefined) {
+      var break_here = true;
+    }
     projector(i, yid, ys, ynn[yid], 4);
   }
 
@@ -452,8 +459,19 @@ Flock.prototype.draw = function(context) {
     this.boids[idxBoid].draw(context);
   }
 
-  // sinks
   if (Flock.prototype.debug) {
+    // sources
+    context.fillStyle = "white";
+    var numSources = Flock.prototype.sources.length;
+    for (var idxSource = 0; idxSource < numSources; ++idxSource) {
+      var x = Flock.prototype.sources[idxSource][0];
+      var y = Flock.prototype.sources[idxSource][1];
+      context.beginPath();
+      context.arc(x, y, 6, 0, 2*Math.PI, false);
+      context.fill();
+    }
+
+    // sinks
     context.fillStyle = "darkslategray";
     var numSinks = Flock.prototype.sinks.length;
     for (var idxSink = 0; idxSink < numSinks; ++idxSink) {
@@ -463,5 +481,12 @@ Flock.prototype.draw = function(context) {
       context.arc(x, y, 6, 0, 2*Math.PI, false);
       context.fill();
     }
+
+    // boid counter
+    context.font = '8pt Futura';
+    context.fillStyle = "white";
+    var boidCounterText = "boids: " + f.numActive;
+    var textDim = context.measureText(boidCounterText)
+    context.fillText(boidCounterText, 1, context.canvas.height - 2);
   }
 }
