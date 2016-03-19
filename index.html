@@ -54,7 +54,7 @@
         last = timestamp;
         var dt = progress / 100;
 
-        context.fillStyle = "#000000";
+        context.fillStyle = "cornflowerblue";
         context.fillRect(0, 0, canvas.width, canvas.height);
         // context.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -93,24 +93,12 @@
         uiText += String.fromCharCode(key);
       }
 
-      var menuFsm = StateMachine.create({
-        initial: 'hidden',
-        events: [
-          { name: 'open',  from: 'hidden', to: 'active' },
-          { name: 'close', from: 'active', to: 'hidden' }
-        ]
-      });
+      function handleMouseClick(e) {
+        getMousePos(e);
 
-      var f = new Flock();
-      f.createSource(50, 50);
-      f.createSink(50, 250);
-      f.createSink(50, 400);
-      f.createSink(250, 600);
-      f.createBoids(900);
+        Flock.prototype.sources[0][0] = mouseX;
+        Flock.prototype.sources[0][1] = mouseY;
 
-      canvas.addEventListener('keydown', handleKeyDown, false);
-
-      canvas.addEventListener('click', function() {
         var data = {
           operation: "create"
         };
@@ -133,7 +121,45 @@
             }
           });
         }
-      }, false);
+      }
+
+      function getMousePos(e) {
+        if (e.pageX || e.pageY == 0) {
+          mouseX = e.pageX - e.target.offsetLeft;
+          mouseY = e.pageY - e.target.offsetTop;
+        } else if (e.offsetX || e.offsetY == 0) {
+          mouseX = e.offsetX;
+          mouseY = e.offsetY;
+        }
+      }
+
+      var menuFsm = StateMachine.create({
+        initial: 'hidden',
+        events: [
+          { name: 'open',  from: 'hidden', to: 'active' },
+          { name: 'close', from: 'active', to: 'hidden' }
+        ]
+      });
+
+      var mouseX = 0;
+      var mouseY = 0;
+
+      var f = new Flock();
+      f.createSource(context.canvas.width / 2, context.canvas.height / 2);
+      // f.createSource(context.canvas.width / 2, context.canvas.height - 20);
+      // f.createSource(context.canvas.width / 2, 20);
+      // f.createSource(context.canvas.width - 20, context.canvas.height / 2);
+      // f.createSource(20, context.canvas.height / 2);
+      var sinkOffset = 40;
+      f.createSink(sinkOffset, sinkOffset);
+      f.createSink(context.canvas.width - sinkOffset, sinkOffset);
+      f.createSink(sinkOffset, context.canvas.height - sinkOffset);
+      f.createSink(context.canvas.width - sinkOffset, context.canvas.height - sinkOffset);
+      f.createBoids(500);
+
+      canvas.addEventListener('keydown', handleKeyDown, false);
+      canvas.addEventListener('click', handleMouseClick, false);
+
       window.requestAnimationFrame(step);
     </script>
   </body>

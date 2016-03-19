@@ -13,7 +13,7 @@ Boid.prototype.angle = [];
 Boid.prototype.neighbors = [];
 Boid.prototype.numBoids = 0;
 
-var angle = 45;
+var angle = 11.125;
 Boid.prototype.rotLimit = Math.cos(angle * Math.PI / 180.0);
 Boid.prototype.rneg = buildRotationMatrix(-angle);
 Boid.prototype.rpos = buildRotationMatrix(angle);
@@ -242,35 +242,46 @@ Boid.prototype.draw = function(context) {
     }
   }
 
-  var depth = (this.id % 4 + 1) * 0.2 + 0.6
+  var depth = 1; // (this.id % 4 + 1) * 0.2 + 1.1
 
   // draw heading
   if (true) {
-    context.strokeStyle = "white"; //"hsla(" + this.hue + ",100%,50%,1)";
+    context.strokeStyle = "black"; //"hsla(" + this.hue + ",100%,50%,1)";
     context.beginPath();
     context.moveTo(x, y);
     var vel = Boid.prototype.vel[this.id];
-    var dist = 10;
-    context.lineTo(x+vel[0]*dist * depth, y+vel[1]*dist * depth);
+    var dist = 6;
+    context.lineWidth = 4;
+    context.lineTo(x - vel[0] * dist * depth, y + Math.abs(vel[1]) * dist * depth);
     context.stroke();
   }
 
   // desired velocity
-  if (true) {
+  if (false) {
     context.strokeStyle = "gray"; //"hsla(" + 255*255 + ",100%,50%,1)";
     context.beginPath();
     context.moveTo(x, y);
     var vel = Boid.prototype.dvel[this.id];
-    var dist = 10;
-    context.lineTo(x-vel[0]*dist * depth, y-vel[1]*dist * depth);
+    var dist = 5;
+    context.lineTo(x+vel[0]*dist * depth, y+vel[1]*dist * depth);
     context.stroke();
   }
 
   // body
   context.beginPath();
-  context.arc(x, y, 2, 0, 2*Math.PI, false);
+  context.arc(x, y, 3, 0, 2*Math.PI, false);
   if (true) {
-    context.fillStyle = "red"; //"hsla(128,50%,50%,1)";
+    context.fillStyle = "yellow"; // "white"; //"hsla(128,50%,50%,1)";
+  } else {
+    context.fillStyle = "hsla(" + this.hue + ",100%,50%,1)";
+  }
+  context.fill();
+
+  // eye
+  context.beginPath();
+  context.arc(x+vel[0]*(dist/2.0), y+vel[1]*(dist/2.0), 2, 0, 2*Math.PI, false);
+  if (true) {
+    context.fillStyle = "black"; //"hsla(128,50%,50%,1)";
   } else {
     context.fillStyle = "hsla(" + this.hue + ",100%,50%,1)";
   }
@@ -286,7 +297,7 @@ Boid.prototype.draw = function(context) {
 //   ▀                       ▀
 //
 Flock.prototype.numFlocks = 0;
-Flock.prototype.source = [];
+Flock.prototype.sources = [];
 Flock.prototype.sinks = [];
 Flock.prototype.boids = [];
 Flock.prototype.numBoids = [];
@@ -302,15 +313,12 @@ function Flock() {
   Flock.prototype.boids[this.id] = [];
 }
 
-// TODO support multiple sources
 Flock.prototype.createSource = function(x, y) {
-  var numSources = this.sources.length;
-  this.sources[numSources] = [x, y];
+  var numSources = Flock.prototype.sources.length;
+  Flock.prototype.sources[numSources] = [x, y];
 }
 
 Flock.prototype.createSink = function(x, y) {
-  // var numSinks = this.sinks.length;
-  // this.sinks[numSinks] = [x, y];
   var numSinks = Flock.prototype.sinks.length;
   Flock.prototype.sinks[numSinks] = [x, y];
 }
@@ -359,7 +367,10 @@ Flock.prototype.update = function(dt) {
 }
 
 function createBoid() {
-  var p = [2 * 10 + 40, 30 + 40];
+  var numSources = Flock.prototype.sources.length;
+  var idxSource = randomInRange(0, numSources - 1, true);
+  var src = Flock.prototype.sources[idxSource];
+  var p = [src[0], src[1]];
   p[0] += Math.random() * 6 - 3;
   p[1] += Math.random() * 6 - 3;
 
@@ -367,7 +378,7 @@ function createBoid() {
   var v = [(Math.random() - 0.5), (Math.random() - 0.5)];
   v = normalize(v);
 
-  var hue = randomInRange(0, 55, 1);
+  var hue = randomInRange(128, 255, 1);
   return new Boid(p, v, hue);
 }
 
