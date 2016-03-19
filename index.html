@@ -49,12 +49,6 @@
         return (wantInt) ? Math.round(gen) : gen;
       }
 
-      function drawUI() {
-        context.font = '16pt Futura';
-        context.fillStyle = "silver";
-        context.fillText(uiText, 1, 20);
-      }
-
       function step(timestamp) {
         var progress = timestamp - last;
         last = timestamp;
@@ -73,24 +67,39 @@
         window.requestAnimationFrame(step);
       }
 
+      function drawUI() {
+        if (menuFsm.current == 'active') {
+          context.font = '12pt Futura';
+          context.fillStyle = "white";
+          context.fillText(menuFsm.current, 1, 20);
+          context.fillText(uiText, 1, 40);
+
+
+          context.font = '8pt Futura';
+          context.fillStyle = "white";
+          var boidCounterText = "boids: " + f.numActive;
+          var textDim = context.measureText(boidCounterText)
+          context.fillText(boidCounterText, 1, context.canvas.height - 2);
+        }
+      }
+
       function handleKeyDown(e) {
         var key = e.keyCode;
         if (key == 8) {
           uiText = uiText.substring(0, uiText.length - 1);
           return false;
         }
-        uiText += String.fromCharCode((96<=key && key<=105)? key-48 : key);
-        // console.log(e.keyCode);
+        // uiText += String.fromCharCode((96<=key && key<=105)? key-48 : key);
+        uiText += String.fromCharCode(key);
       }
 
-      var fsm = StateMachine.create({
-        initial: 'green',
+      var menuFsm = StateMachine.create({
+        initial: 'hidden',
         events: [
-          { name: 'warn',  from: 'green',  to: 'yellow' },
-          { name: 'panic', from: 'yellow', to: 'red'    },
-          { name: 'calm',  from: 'red',    to: 'yellow' },
-          { name: 'clear', from: 'yellow', to: 'green'  }
-      ]});
+          { name: 'open',  from: 'hidden', to: 'active' },
+          { name: 'close', from: 'active', to: 'hidden' }
+        ]
+      });
 
       var f = new Flock();
       f.createSource(50, 50);
@@ -107,6 +116,8 @@
         };
 
         f.toggleHidden();
+        menuFsm.current == 'hidden' ? menuFsm.open() : menuFsm.close()
+
         if (false) {
           $.ajax({
             url: "https://shjsc38xsl.execute-api.us-west-2.amazonaws.com/prod/honeymummiesresource",

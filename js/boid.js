@@ -452,10 +452,5 @@ Flock.prototype.draw = function(context) {
       context.arc(x, y, 6, 0, 2*Math.PI, false);
       context.fill();
     }
-
-    context.font = '16pt Futura';
-    context.fillStyle = "white";
-    context.fillText("boids: " + this.numActive, 1, 20);
-
   }
 }
