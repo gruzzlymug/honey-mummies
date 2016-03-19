@@ -17,8 +17,8 @@ namespace HoneyMummies
         while( mb_running )
         {
             draw();
-            update();
             step();
+            update();
         }
         return;
     }
