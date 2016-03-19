@@ -13,7 +13,7 @@ Boid.prototype.angle = [];
 Boid.prototype.neighbors = [];
 Boid.prototype.numBoids = 0;
 
-var angle = 22.5;
+var angle = 45;
 Boid.prototype.rotLimit = Math.cos(angle * Math.PI / 180.0);
 Boid.prototype.rneg = buildRotationMatrix(-angle);
 Boid.prototype.rpos = buildRotationMatrix(angle);
@@ -157,6 +157,11 @@ Boid.prototype.update = function(dt) {
   var gf = 0.5;
   vm[0] = 1*sv[0] + cv[0] + av[0] + gf*gv[0] + bv[0];
   vm[1] = 1*sv[1] + cv[1] + av[1] + gf*gv[1] + bv[1];
+
+  if (Flock.prototype.debug) {
+    vm[0] = gf*gv[0] + bv[0];
+    vm[1] = gf*gv[1] + bv[1];
+  }
   vm = normalize(vm);
 
   Boid.prototype.dvel[this.id][0] = vm[0];
@@ -318,7 +323,7 @@ Flock.prototype.setTarget = function(boid) {
 }
 
 Flock.prototype.toggleHidden = function() {
-  this.debug = !this.debug;
+  Flock.prototype.debug = !Flock.prototype.debug;
 }
 
 // TODO break on NaNs in ps (esp when limiting neighbors by distance)
@@ -437,7 +442,7 @@ Flock.prototype.draw = function(context) {
   }
 
   // sinks
-  if (this.debug) {
+  if (Flock.prototype.debug) {
     context.fillStyle = "darkslategray";
     var numSinks = Flock.prototype.sinks.length;
     for (var idxSink = 0; idxSink < numSinks; ++idxSink) {

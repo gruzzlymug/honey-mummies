@@ -4,6 +4,8 @@
   <head>
     <title>honeymummies</title>
     <script src="js/boid.js"></script>
+    <script src="js/lib/state-machine.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>
     <style>
       body {
         margin: 0px;
@@ -12,7 +14,7 @@
     </style>
   </head>
   <body>
-    <canvas id="field" width="500" height="500"></canvas>
+    <canvas id="field" tabindex="1" width="500" height="500" style="outline:none"></canvas>
     <script>
       var canvas = document.getElementById('field');
       var context = canvas.getContext('2d');
@@ -24,6 +26,8 @@
       var t = 0;
       var dv = [0, 0];
       var dp = [0, 0];
+
+      var uiText = "";
 
       // convenience function for console debugger (use in watch window)
       function o(vec) {
@@ -45,6 +49,12 @@
         return (wantInt) ? Math.round(gen) : gen;
       }
 
+      function drawUI() {
+        context.font = '16pt Futura';
+        context.fillStyle = "silver";
+        context.fillText(uiText, 1, 20);
+      }
+
       function step(timestamp) {
         var progress = timestamp - last;
         last = timestamp;
@@ -54,26 +64,65 @@
         context.fillRect(0, 0, canvas.width, canvas.height);
         // context.clearRect(0, 0, canvas.width, canvas.height);
 
-        // context.font = '16pt Futura';
-        // context.fillStyle = "#000000";
-        // context.fillText("honeymummies.com", 1, 20);
-
         f.update(dt);
         f.move(context);
         f.draw(context);
 
+        drawUI();
+
         window.requestAnimationFrame(step);
       }
 
+      function handleKeyDown(e) {
+        var key = e.keyCode;
+        if (key == 8) {
+          uiText = uiText.substring(0, uiText.length - 1);
+          return false;
+        }
+        uiText += String.fromCharCode((96<=key && key<=105)? key-48 : key);
+        // console.log(e.keyCode);
+      }
+
+      var fsm = StateMachine.create({
+        initial: 'green',
+        events: [
+          { name: 'warn',  from: 'green',  to: 'yellow' },
+          { name: 'panic', from: 'yellow', to: 'red'    },
+          { name: 'calm',  from: 'red',    to: 'yellow' },
+          { name: 'clear', from: 'yellow', to: 'green'  }
+      ]});
+
       var f = new Flock();
-      f.createSource(100, 100);
-      f.createSink(200, 200);
-      f.createSink(400, 500);
-      f.createSink(200, 800);
-      f.createBoids(400);
+      f.createSource(50, 50);
+      f.createSink(50, 250);
+      f.createSink(50, 400);
+      f.createSink(250, 600);
+      f.createBoids(900);
 
-      canvas.addEventListener('click', function() { f.toggleHidden(); }, false);
+      canvas.addEventListener('keydown', handleKeyDown, false);
 
+      canvas.addEventListener('click', function() {
+        var data = {
+          operation: "create"
+        };
+
+        f.toggleHidden();
+        if (false) {
+          $.ajax({
+            url: "https://shjsc38xsl.execute-api.us-west-2.amazonaws.com/prod/honeymummiesresource",
+            type: "GET",
+            crossDomain: true,
+            contentType: 'application/json',
+            success: function(data) {
+              alert(data);
+            },
+            error: function(xhr, ajaxOptions, thrownError) {
+              // TODO improve error handling
+              consoleo.log('ERROR');
+            }
+          });
+        }
+      }, false);
       window.requestAnimationFrame(step);
     </script>
   </body>
