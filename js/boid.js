@@ -11,9 +11,10 @@ Boid.prototype.dvel = [];
 Boid.prototype.turns = [];
 Boid.prototype.angle = [];
 Boid.prototype.neighbors = [];
+Boid.prototype.life = [];
 Boid.prototype.numBoids = 0;
 
-var angle = 11.125;
+var angle = 22.5;
 Boid.prototype.rotLimit = Math.cos(angle * Math.PI / 180.0);
 Boid.prototype.rneg = buildRotationMatrix(-angle);
 Boid.prototype.rpos = buildRotationMatrix(angle);
@@ -55,6 +56,7 @@ function Boid(p, v, hue) {
   Boid.prototype.vel[this.id] = v;
   Boid.prototype.dvel[this.id] = [0, 0];
   Boid.prototype.turns[this.id] = 0;
+  Boid.prototype.life[this.id] = randomInRange(127, 255, true);
 }
 
 Boid.prototype.align = function() {
@@ -83,7 +85,7 @@ Boid.prototype.separate = function() {
   var numNeighbors = neighbors.length;
   var av = [0, 0];
   var bp = Boid.prototype.pos[this.id];
-  var threshold = 25*25;
+  var threshold = 100*100;
   for (var i = 0; i < numNeighbors; ++i) {
     var nid = neighbors[i];
     var np = Boid.prototype.pos[nid];
@@ -93,7 +95,7 @@ Boid.prototype.separate = function() {
     d[1] = bp[1] - np[1];
     var ds = d[0]*d[0] + d[1]*d[1];
     if (ds < threshold) {
-      d = normalize(d);
+      //d = normalize(d);
       var factor = threshold / ds;
       av[0] += d[0] * factor;
       av[1] += d[1] * factor;
@@ -130,6 +132,7 @@ Boid.prototype.cohere = function() {
 
 Boid.prototype.gravitate = function() {
   var gv = [0, 0];
+
   var bp = Boid.prototype.pos[this.id];
   var numSinks = Flock.prototype.sinks.length;
   for (var idxSink = 0; idxSink < numSinks; ++idxSink) {
@@ -205,7 +208,11 @@ Boid.prototype.update = function(dt) {
 }
 
 Boid.prototype.move = function(context) {
-  var velocityFactor = 1.0;
+  var lifeForce = Boid.prototype.life[this.id];
+  var velocityFactor = 1; // lifeForce / 128.0;
+  // lifeForce -= 0.1;
+  // Boid.prototype.life[this.id] = Math.max(0, lifeForce);
+
   Boid.prototype.pos[this.id][0] += (Boid.prototype.vel[this.id][0] * velocityFactor);
   Boid.prototype.pos[this.id][1] += (Boid.prototype.vel[this.id][1] * velocityFactor);
 
@@ -253,7 +260,7 @@ Boid.prototype.draw = function(context) {
     var vel = Boid.prototype.vel[this.id];
     var dist = 6;
     context.lineWidth = 4;
-    context.lineTo(x - vel[0] * dist * depth, y + Math.abs(vel[1]) * dist * depth);
+    context.lineTo(x - vel[0] * dist * depth, y - vel[1] * dist * depth);
     context.stroke();
   }
 
@@ -271,8 +278,12 @@ Boid.prototype.draw = function(context) {
   // body
   context.beginPath();
   context.arc(x, y, 3, 0, 2*Math.PI, false);
-  if (true) {
-    context.fillStyle = "yellow"; // "white"; //"hsla(128,50%,50%,1)";
+  if (this.id == 14) {
+    context.fillStyle = "red"; // "white"; //"hsla(128,50%,50%,1)";
+  } else if (Boid.prototype.neighbors[this.id].includes(14)) {
+    context.fillStyle = "white"; // "white"; //"hsla(128,50%,50%,1)";
+  } else if (true) {
+    context.fillStyle = "black"; // "white"; //"hsla(128,50%,50%,1)";
   } else {
     context.fillStyle = "hsla(" + this.hue + ",100%,50%,1)";
   }
@@ -280,13 +291,69 @@ Boid.prototype.draw = function(context) {
 
   // eye
   context.beginPath();
-  context.arc(x+vel[0]*(dist/2.0), y+vel[1]*(dist/2.0), 2, 0, 2*Math.PI, false);
-  if (true) {
+  var vel = Boid.prototype.dvel[this.id];
+  context.arc(x+vel[0]*(dist/2.0), y+vel[1]*(dist/2.0), 1, 0, 2*Math.PI, false);
+  if (false) {
     context.fillStyle = "black"; //"hsla(128,50%,50%,1)";
   } else {
     context.fillStyle = "hsla(" + this.hue + ",100%,50%,1)";
   }
   context.fill();
+}
+
+//
+ProjectedAxesDatabase.prototype.xs = [];
+ProjectedAxesDatabase.prototype.ys = [];
+ProjectedAxesDatabase.prototype.cx = 16;
+ProjectedAxesDatabase.prototype.cy = 16;
+ProjectedAxesDatabase.prototype.db = [];
+
+function ProjectedAxesDatabase() {
+  var cx = ProjectedAxesDatabase.prototype.cx;
+  var cy = ProjectedAxesDatabase.prototype.cy;
+  for (var i = 0; i < cx; ++i) {
+    ProjectedAxesDatabase.prototype.db[i] = [];
+    for (var j = 0; j < cx; ++j) {
+      ProjectedAxesDatabase.prototype.db[i][j] = 0;
+    }
+  }
+}
+
+ProjectedAxesDatabase.prototype.update = function(p, scaleFactor) {
+  this.sortAxes(p, scaleFactor);
+
+}
+
+ProjectedAxesDatabase.prototype.sortAxes = function(p, scaleFactor) {
+  var numBoids = Boid.prototype.pos.length
+
+  var xs = ProjectedAxesDatabase.prototype.xs;
+  var ys = ProjectedAxesDatabase.prototype.ys;
+  for (var boidId = 0; boidId < numBoids; ++boidId) {
+    // embed axis position and id into each number
+    xs[boidId] = Math.round(p[boidId][0]) * scaleFactor + boidId;
+    ys[boidId] = Math.round(p[boidId][1]) * scaleFactor + boidId;
+  }
+  // now sort by position and preserve id
+  xs = xs.sort(function(a,b){return a-b});
+  ys = ys.sort(function(a,b){return a-b});
+}
+
+ProjectedAxesDatabase.prototype.populateGrid = function() {
+  var cx = ProjectedAxesDatabase.prototype.cx;
+  var cy = ProjectedAxesDatabase.prototype.cy;
+  var mx = 1000 / cx;
+  var my = 1000 / cy;
+  for (var i = 0; i < cx; ++i) {
+    ProjectedAxesDatabase.prototype.db[i] = [];
+    var numInX = [];
+    while (1 < 0) {
+      // do something
+    }
+    for (var j = 0; j < cx; ++j) {
+      ProjectedAxesDatabase.prototype.db[i][j] = 0;
+    }
+  }
 }
 
 //
@@ -300,8 +367,9 @@ Boid.prototype.draw = function(context) {
 Flock.prototype.numFlocks = 0;
 Flock.prototype.sources = [];
 Flock.prototype.sinks = [];
+Flock.prototype.numActive = 0;
+Flock.prototype.numDesired = 0;
 Flock.prototype.boids = [];
-Flock.prototype.numBoids = [];
 
 function Flock() {
   this.id = Flock.prototype.numFlocks++;
@@ -311,6 +379,7 @@ function Flock() {
   this.sources = [];
   this.sinks = [];
   this.frame = 0;
+  this.pj = new ProjectedAxesDatabase();
   Flock.prototype.boids[this.id] = [];
 }
 
@@ -336,11 +405,11 @@ Flock.prototype.toggleDebug = function() {
 }
 
 // TODO break on NaNs in ps (esp when limiting neighbors by distance)
-function projector(i, id, ps, nearestNeighbors, numNearest) {
+function projector(i, id, ps, nearestNeighbors, numNearest, scaleFactor) {
   var lowerLimit = Math.max(i - numNearest, 0);
   var upperLimit = Math.min(i + numNearest, Boid.prototype.numBoids);
   for (var idxNeighbor = lowerLimit; idxNeighbor < upperLimit; ++idxNeighbor) {
-    pid = ps[idxNeighbor] % 1000;
+    pid = ps[idxNeighbor] % scaleFactor;
     if (pid == id) continue;
     nearestNeighbors.push(pid);
   }
@@ -354,11 +423,16 @@ Flock.prototype.update = function(dt) {
       ++this.numActive;
       if (this.numActive > numBoids) {
         this.boids[numBoids] = createBoid();
+      } else {
+        // reuse existing boid
       }
     }
   }
 
   if (this.frame % 5 == 0) {
+    var scaleFactor = 1000;
+    this.pj.update(Boid.prototype.pos, scaleFactor);
+
     this.findNeighbors();
     for (var idxBoid = 0; idxBoid < this.numActive; ++idxBoid) {
       this.boids[idxBoid].update(dt);
@@ -383,33 +457,45 @@ function createBoid() {
   return new Boid(p, v, hue);
 }
 
+Flock.prototype.cull = function() {
+  for (var idxBoid = 0; idxBoid < this.numActive; ++idxBoid) {
+    if (Boid.prototype.life[idxBoid] < nearlyZero) {
+      Boid.prototype.pos[idxBoid] = Boid.prototype.pos[this.numActive - 1];
+      Boid.prototype.vel[idxBoid] = Boid.prototype.vel[this.numActive - 1];
+      Boid.prototype.life[idxBoid] = Boid.prototype.life[this.numActive - 1];
+      --this.numActive;
+    }
+  }
+}
+
 Flock.prototype.findNeighbors = function() {
   var numBoids = Boid.prototype.numBoids;
-  var p = Boid.prototype.pos;
-  var xs = [];
-  var ys = [];
+  var scaleFactor = 1000;
+  if (numBoids >= scaleFactor) {
+    var too_many_boids = true;
+  }
+
+  var xs = this.pj.xs;
+  var ys = this.pj.ys;
+
   var xnn = []
   var ynn = []
   for (var i = 0; i < numBoids; ++i) {
-    xs[i] = Math.round(p[i][0]) * 1000 + i;
-    ys[i] = Math.round(p[i][1]) * 1000 + i;
     xnn[i] = [];
     ynn[i] = [];
   }
-  xs = xs.sort(function(a,b){return a-b});
-  ys = ys.sort(function(a,b){return a-b});
 
   for (var i = 0; i < numBoids; ++i) {
-    var xid = xs[i] % 1000;
-    if (xnn[xid] === undefined) {
-      var break_here = true;
-    }
-    projector(i, xid, xs, xnn[xid], 4);
-    var yid = ys[i] % 1000;
-    if (ynn[yid] === undefined) {
-      var break_here = true;
-    }
-    projector(i, yid, ys, ynn[yid], 4);
+    var xid = xs[i] % scaleFactor;
+    // if (xnn[xid] === undefined) {
+    //   var break_here = true;
+    // }
+    projector(i, xid, xs, xnn[xid], 4, scaleFactor);
+    var yid = ys[i] % scaleFactor;
+    // if (ynn[yid] === undefined) {
+    //   var break_here = true;
+    // }
+    projector(i, yid, ys, ynn[yid], 4, scaleFactor);
   }
 
   for (var i = 0; i < numBoids; ++i) {
@@ -454,7 +540,7 @@ Flock.prototype.move = function(context) {
 
 Flock.prototype.draw = function(context) {
   // boids
-  var numBoids = this.boids.length;
+  var numBoids = this.numActive;
   for (var idxBoid = 0; idxBoid < numBoids; ++idxBoid) {
     this.boids[idxBoid].draw(context);
   }
