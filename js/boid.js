@@ -209,7 +209,7 @@ Boid.prototype.update = function(dt) {
 
 Boid.prototype.move = function(context) {
   var lifeForce = Boid.prototype.life[this.id];
-  var velocityFactor = 1; // lifeForce / 128.0;
+  var velocityFactor = 2.5; // lifeForce / 128.0;
   // lifeForce -= 0.1;
   // Boid.prototype.life[this.id] = Math.max(0, lifeForce);
 
