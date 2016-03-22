@@ -54,11 +54,25 @@
         last = timestamp;
         var dt = progress / 100;
 
-        context.fillStyle = "deepskyblue";
+        context.fillStyle = "gray";
         context.fillRect(0, 0, canvas.width, canvas.height);
         // context.clearRect(0, 0, canvas.width, canvas.height);
 
+        // context.strokeStyle = "lightgray";
+        // context.lineWidth = 1;
+        // for (var ix = 1; ix < canvas.width / 2; ix += canvas.width / 8) {
+        //   for (var iy = 1; iy < canvas.width / 2; iy += canvas.height / 8) {
+        //     context.beginPath();
+        //     context.moveTo(ix, 0);
+        //     context.lineTo(ix, canvas.height - 1);
+        //     context.moveTo(0, iy);
+        //     context.lineTo(canvas.width - 1, iy);
+        //     context.stroke();
+        //   }
+        // }
+
         f.update(dt);
+        // f.cull();
         f.move(context);
         f.draw(context);
 
@@ -71,6 +85,8 @@
         drawMenu(context);
       }
 
+      var loggedInTextColor = "black"
+      var loggedOutTextColor = "darkred";
       function drawMenu(context) {
         switch (menuFsm.current) {
           case 'visible':
@@ -102,7 +118,7 @@
             }
 
             context.font = '8pt Futura';
-            context.fillStyle = user ? "black" : "darkred";
+            context.fillStyle = user ? loggedInTextColor : loggedOutTextColor;
             if (uiText.length < 4) {
               for (var i = 0; i < uiText.length; ++i) {
                 var letter = uiText[i];
@@ -144,6 +160,28 @@
         }
       }
 
+      function handleMouseMove(e) {
+        getMousePos(e);
+
+        if ((mouseY <= 40) && (mouseX <= 40)) {
+          if (menuFsm.current == 'hidden') {
+            menuFsm.show();
+          }
+        } else if (menuFsm.current == 'visible') {
+          menuFsm.hide();
+        }
+      }
+
+      function getMousePos(e) {
+        if (e.pageX || e.pageY == 0) {
+          mouseX = e.pageX - e.target.offsetLeft;
+          mouseY = e.pageY - e.target.offsetTop;
+        } else if (e.offsetX || e.offsetY == 0) {
+          mouseX = e.offsetX;
+          mouseY = e.offsetY;
+        }
+      }
+
       function handleMouseClick(e) {
         // menu
         if (menuFsm.current == 'active') {
@@ -174,49 +212,35 @@
       }
 
       function submitCredentials(username, password) {
-        var data = {
-          "name": username
-        };
-
-        $.ajax({
-          url: "https://shjsc38xsl.execute-api.us-west-2.amazonaws.com/prod/honeymummiesresource",
-          type: "POST",
-          crossDomain: true,
-          contentType: 'application/json',
-          data: JSON.stringify(data),
-          dataType: 'json',
-          success: function(data) {
-            console.log('SUCCESS:' + data);
-            user = data;
-            uiText = "";
-          },
-          error: function(xhr, ajaxOptions, thrownError) {
-            console.log('ERROR: Invalid credentials');
-            user = null;
-            uiText = "";
-          }
+        // pretend log in...shhhh!
+        var p1 = new Promise(function(resolve, reject) {
+          window.setTimeout(function() { resolve(13); }, 500);
         });
-      }
+        p1.then(function(val) { user = { "Hello": username } });
 
-      function handleMouseMove(e) {
-        getMousePos(e);
+        if (false) {
+          var data = {
+            "name": username
+          };
 
-        if ((mouseY <= 40) && (mouseX <= 40)) {
-          if (menuFsm.current == 'hidden') {
-            menuFsm.show();
-          }
-        } else if (menuFsm.current == 'visible') {
-          menuFsm.hide();
-        }
-      }
-
-      function getMousePos(e) {
-        if (e.pageX || e.pageY == 0) {
-          mouseX = e.pageX - e.target.offsetLeft;
-          mouseY = e.pageY - e.target.offsetTop;
-        } else if (e.offsetX || e.offsetY == 0) {
-          mouseX = e.offsetX;
-          mouseY = e.offsetY;
+          $.ajax({
+            url: "https://shjsc38xsl.execute-api.us-west-2.amazonaws.com/prod/honeymummiesresource",
+            type: "POST",
+            crossDomain: true,
+            contentType: 'application/json',
+            data: JSON.stringify(data),
+            dataType: 'json',
+            success: function(data) {
+              console.log('SUCCESS:' + data);
+              user = data;
+              uiText = "";
+            },
+            error: function(xhr, ajaxOptions, thrownError) {
+              console.log('ERROR: Invalid credentials');
+              user = null;
+              uiText = "";
+            }
+          });
         }
       }
 
@@ -248,7 +272,7 @@
       f.createSink(sinkOffsetX, cch - sinkOffsetY);
       f.createSink(ccw - sinkOffsetX, cch - sinkOffsetY);
 
-      f.createBoids(500);
+      f.createBoids(250);
 
       canvas.addEventListener('keydown', handleKeyDown, false);
       canvas.addEventListener('click', handleMouseClick, false);
