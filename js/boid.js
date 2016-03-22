@@ -11,6 +11,7 @@ Boid.prototype.dvel = [];
 Boid.prototype.turns = [];
 Boid.prototype.angle = [];
 Boid.prototype.neighbors = [];
+Boid.prototype.dbors = [];
 Boid.prototype.life = [];
 Boid.prototype.numBoids = 0;
 
@@ -20,6 +21,7 @@ Boid.prototype.rneg = buildRotationMatrix(-angle);
 Boid.prototype.rpos = buildRotationMatrix(angle);
 
 var nearlyZero = 0.0001;
+var neighborDist = 150;
 
 function normalize(v) {
   var lv = Math.sqrt(v[0]*v[0] + v[1]*v[1]);
@@ -55,6 +57,7 @@ function Boid(p, v, hue) {
   Boid.prototype.pos[this.id] = p;
   Boid.prototype.vel[this.id] = v;
   Boid.prototype.dvel[this.id] = [0, 0];
+  Boid.prototype.dbors[this.id] = [];
   Boid.prototype.turns[this.id] = 0;
   Boid.prototype.life[this.id] = randomInRange(127, 255, true);
 }
@@ -280,14 +283,25 @@ Boid.prototype.draw = function(context) {
   context.arc(x, y, 3, 0, 2*Math.PI, false);
   if (this.id == 14) {
     context.fillStyle = "red"; // "white"; //"hsla(128,50%,50%,1)";
+    context.fill();
+    context.moveTo(x + neighborDist, y)
+    context.arc(x, y, neighborDist, 0, 2*Math.PI, false);
+    context.lineWidth = 1;
+    context.strokeStyle = '#003300';
+    context.stroke();
+  } else if (Boid.prototype.dbors[this.id].includes(14) && !Boid.prototype.neighbors[this.id].includes(14)) {
+    context.fillStyle = "cornflowerblue";
+    context.fill();
   } else if (Boid.prototype.neighbors[this.id].includes(14)) {
     context.fillStyle = "white"; // "white"; //"hsla(128,50%,50%,1)";
+    context.fill();
   } else if (true) {
     context.fillStyle = "black"; // "white"; //"hsla(128,50%,50%,1)";
+    context.fill();
   } else {
     context.fillStyle = "hsla(" + this.hue + ",100%,50%,1)";
+    context.fill();
   }
-  context.fill();
 
   // eye
   context.beginPath();
@@ -487,20 +501,21 @@ Flock.prototype.findNeighbors = function() {
 
   for (var i = 0; i < numBoids; ++i) {
     var xid = xs[i] % scaleFactor;
-    // if (xnn[xid] === undefined) {
-    //   var break_here = true;
-    // }
+    if (xnn[xid] === undefined) {
+      var break_here = true;
+    }
     projector(i, xid, xs, xnn[xid], 4, scaleFactor);
     var yid = ys[i] % scaleFactor;
-    // if (ynn[yid] === undefined) {
-    //   var break_here = true;
-    // }
+    if (ynn[yid] === undefined) {
+      var break_here = true;
+    }
     projector(i, yid, ys, ynn[yid], 4, scaleFactor);
   }
 
   for (var i = 0; i < numBoids; ++i) {
     // NOTE the all array can have dups
     var all = xnn[i].concat(ynn[i]);
+    Boid.prototype.dbors[i] = all;
     var boid = Boid.prototype.pos[i];
     var closest = {};
     for (a = 0; a < all.length; ++a) {
@@ -521,9 +536,9 @@ Flock.prototype.findNeighbors = function() {
       var np = Boid.prototype.pos[neighborId];
       var dx = bp[0] - np[0];
       var dy = bp[1] - np[1];
-      // TODO limit neighbors to range
+      // limit neighbors to range
       var dsqr = dx*dx + dy*dy;
-      if (dsqr < 300*300) {
+      if (dsqr < neighborDist*neighborDist) {
         c4n.push(neighborId);
       }
     }
