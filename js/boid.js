@@ -132,7 +132,6 @@ Boid.prototype.cohere = function() {
 
 Boid.prototype.gravitate = function() {
   var gv = [0, 0];
-  return gv;
 
   var bp = Boid.prototype.pos[this.id];
   var numSinks = Flock.prototype.sinks.length;
