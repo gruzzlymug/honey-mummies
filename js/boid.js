@@ -21,7 +21,7 @@ Boid.prototype.rneg = buildRotationMatrix(-angle);
 Boid.prototype.rpos = buildRotationMatrix(angle);
 
 var nearlyZero = 0.0001;
-var neighborDist = 150;
+var neighborDist = 75;
 
 function normalize(v) {
   var lv = Math.sqrt(v[0]*v[0] + v[1]*v[1]);
@@ -57,6 +57,7 @@ function Boid(p, v, hue) {
   Boid.prototype.pos[this.id] = p;
   Boid.prototype.vel[this.id] = v;
   Boid.prototype.dvel[this.id] = [0, 0];
+  Boid.prototype.neighbors[this.id] = [];
   Boid.prototype.dbors[this.id] = [];
   Boid.prototype.turns[this.id] = 0;
   Boid.prototype.life[this.id] = randomInRange(127, 255, true);
@@ -75,6 +76,7 @@ Boid.prototype.align = function() {
   }
   av = normalize(av);
 
+  // TODO this should not be here...remove it
   var vel = Boid.prototype.vel[this.id];
   vel[0] += av[0] / 3.0;
   vel[1] += av[1] / 3.0;
@@ -155,15 +157,33 @@ Boid.prototype.gravitate = function() {
 Boid.prototype.update = function(dt) {
   // velocity modifiers
   var sv = this.separate();
+  if (isNaN(sv[0]) || isNaN(sv[1])) {
+    var break_here = true;
+  }
+  var sf = 0;
   var cv = this.cohere();
+  if (isNaN(cv[0]) || isNaN(cv[1])) {
+    var break_here = true;
+  }
+  var cf = 0;
   var av = this.align();
+  if (isNaN(av[0]) || isNaN(av[1])) {
+    var break_here = true;
+  }
+  var af = 0;
   var gv = this.gravitate();
+  if (isNaN(gv[0]) || isNaN(gv[1])) {
+    var break_here = true;
+  }
+  var gf = 1;
   var bv = Boid.prototype.vel[this.id];
+  if (isNaN(bv[0]) || isNaN(bv[1])) {
+    var break_here = true;
+  }
 
   var vm = [0, 0];
-  var gf = 0.5;
-  vm[0] = 1*sv[0] + cv[0] + av[0] + gf*gv[0] + bv[0];
-  vm[1] = 1*sv[1] + cv[1] + av[1] + gf*gv[1] + bv[1];
+  vm[0] = sf*sv[0] + cf*cv[0] + af*av[0] + gf*gv[0] + bv[0];
+  vm[1] = sf*sv[1] + cf*cv[1] + af*av[1] + gf*gv[1] + bv[1];
 
   if (Flock.prototype.debug) {
     vm[0] = gf*gv[0] + bv[0];
@@ -235,6 +255,13 @@ Boid.prototype.move = function(context) {
   } else if (by < 0) {
     Boid.prototype.pos[this.id][1] = height; // by + height;
   }
+  // debug
+  if (isNaN(Boid.prototype.pos[this.id][0])) {
+    var break_here = true;
+  }
+  if (isNaN(Boid.prototype.pos[this.id][1])) {
+    var break_here = true;
+  }
 }
 
 Boid.prototype.draw = function(context) {
@@ -286,8 +313,8 @@ Boid.prototype.draw = function(context) {
     context.fill();
     context.moveTo(x + neighborDist, y)
     context.arc(x, y, neighborDist, 0, 2*Math.PI, false);
-    context.lineWidth = 1;
-    context.strokeStyle = '#003300';
+    context.lineWidth = 0.5;
+    context.strokeStyle = 'darkgray';
     context.stroke();
   } else if (Boid.prototype.dbors[this.id].includes(14) && !Boid.prototype.neighbors[this.id].includes(14)) {
     context.fillStyle = "cornflowerblue";
@@ -346,7 +373,13 @@ ProjectedAxesDatabase.prototype.sortAxes = function(p, scaleFactor) {
   for (var boidId = 0; boidId < numBoids; ++boidId) {
     // embed axis position and id into each number
     xs[boidId] = Math.round(p[boidId][0]) * scaleFactor + boidId;
+    if (isNaN(xs[boidId])) {
+      var break_here = true;
+    }
     ys[boidId] = Math.round(p[boidId][1]) * scaleFactor + boidId;
+    if (isNaN(ys[boidId])) {
+      var break_here = true;
+    }
   }
   // now sort by position and preserve id
   xs = xs.sort(function(a,b){return a-b});
@@ -370,6 +403,44 @@ ProjectedAxesDatabase.prototype.populateGrid = function() {
   }
 }
 
+Grid.prototype.width = 0;
+Grid.prototype.height = 0;
+Grid.prototype.cx = 0;
+Grid.prototype.cy = 0;
+Grid.prototype.field = [];
+
+function Grid(width, height, minCellDim) {
+  // do something
+  Grid.prototype.width = width;
+  Grid.prototype.cx = 0;
+  while (width > minCellDim) {
+console.log(width);
+    width /= 2;
+    ++Grid.prototype.cx;
+  }
+console.log(width);
+  Grid.prototype.height = height;
+  Grid.prototype.cy = 0;
+  while (height > minCellDim) {
+    height /= 2;
+    ++Grid.prototype.cy;
+  }
+  Grid.prototype.field = [];
+}
+
+Grid.prototype.clear = function() {
+}
+
+Grid.prototype.add = function(positions) {
+  var numPositions = positions.length;
+  for (var idxPos = 0; idxPos < numPositions; ++idxPos) {
+
+  }
+}
+
+Grid.prototype.query = function() {
+}
+
 //
 // ▄████  █    ████▄ ▄█▄    █  █▀
 // █▀   ▀ █    █   █ █▀ ▀▄  █▄█
@@ -385,7 +456,7 @@ Flock.prototype.numActive = 0;
 Flock.prototype.numDesired = 0;
 Flock.prototype.boids = [];
 
-function Flock() {
+function Flock(grid) {
   this.id = Flock.prototype.numFlocks++;
   this.numActive = 0;
   this.numDesired = 0;
@@ -395,6 +466,8 @@ function Flock() {
   this.frame = 0;
   this.pj = new ProjectedAxesDatabase();
   Flock.prototype.boids[this.id] = [];
+
+  this.grid = grid;
 }
 
 Flock.prototype.createSource = function(x, y) {
@@ -431,7 +504,7 @@ function projector(i, id, ps, nearestNeighbors, numNearest, scaleFactor) {
 
 Flock.prototype.update = function(dt) {
   var numBoids = this.boids.length;
-  if (this.frame % 10 == 0) {
+  if (this.frame % 1 == 0) {
     this.numActive = Math.min(numBoids, this.numActive)
     if (this.numActive < this.numDesired) {
       ++this.numActive;
@@ -444,6 +517,8 @@ Flock.prototype.update = function(dt) {
   }
 
   if (this.frame % 5 == 0) {
+    this.grid.add(Boid.prototype.pos);
+
     var scaleFactor = 1000;
     this.pj.update(Boid.prototype.pos, scaleFactor);
 
@@ -587,7 +662,6 @@ Flock.prototype.draw = function(context) {
     context.font = '8pt Futura';
     context.fillStyle = "white";
     var boidCounterText = "boids: " + f.numActive;
-    var textDim = context.measureText(boidCounterText)
     context.fillText(boidCounterText, 1, context.canvas.height - 2);
   }
 }

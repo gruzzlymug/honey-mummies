@@ -19,6 +19,7 @@
       var canvas = document.getElementById('field');
       var context = canvas.getContext('2d');
       var last = performance.now();
+      var startTime = last;
 
       context.canvas.width = window.innerWidth;
       context.canvas.height = window.innerHeight;
@@ -27,32 +28,26 @@
       var dv = [0, 0];
       var dp = [0, 0];
 
+      var frame = 0;
       var uiText = "";
-
-      // convenience function for console debugger (use in watch window)
-      function o(vec) {
-        return truncate(vec[0], 4) + ", " + truncate(vec[1], 4);
-      }
-
-      function truncate(num, numDigits) {
-        var multiplier = Math.pow(10, numDigits);
-        var adjNum = num * multiplier;
-        var truncatedNum = Math[adjNum < 0 ? 'ceil' : 'floor'](adjNum);
-        return truncatedNum / multiplier;
-      }
-
-      function randomInRange(min, max, wantInt) {
-        var max = (max === 0 || max) ? max : 1,
-            min = min || 0,
-            gen = min + (max - min) * Math.random();
-
-        return (wantInt) ? Math.round(gen) : gen;
-      }
+      var fpsText = "0";
 
       function step(timestamp) {
         var progress = timestamp - last;
         last = timestamp;
         var dt = progress / 100;
+
+        // frames per second
+        elapsedTime = (timestamp - startTime) / 1000,
+        result = Math.floor((frame / elapsedTime));
+        if (elapsedTime > 1) {
+          startTime = timestamp;
+          frame = 0;
+        }
+
+        if (frame % 10 == 0) {
+          fpsText = result.toString();
+        }
 
         context.fillStyle = "gray";
         context.fillRect(0, 0, canvas.width, canvas.height);
@@ -78,11 +73,39 @@
 
         drawUI(context);
 
+        ++frame;
+
         window.requestAnimationFrame(step);
+      }
+
+      // convenience function for console debugger (use in watch window)
+      function o(vec) {
+        return truncate(vec[0], 4) + ", " + truncate(vec[1], 4);
+      }
+
+      function truncate(num, numDigits) {
+        var multiplier = Math.pow(10, numDigits);
+        var adjNum = num * multiplier;
+        var truncatedNum = Math[adjNum < 0 ? 'ceil' : 'floor'](adjNum);
+        return truncatedNum / multiplier;
+      }
+
+      function randomInRange(min, max, wantInt) {
+        var max = (max === 0 || max) ? max : 1,
+            min = min || 0,
+            gen = min + (max - min) * Math.random();
+
+        return (wantInt) ? Math.round(gen) : gen;
       }
 
       function drawUI(context) {
         drawMenu(context);
+
+        // fps counter
+        context.font = '8pt Futura';
+        context.fillStyle = "white";
+        var textDim = context.measureText(fpsText);
+        context.fillText(fpsText, context.canvas.width - (textDim.width + 2), 10);
       }
 
       var loggedInTextColor = "black"
@@ -258,19 +281,22 @@
       var mouseX = 0;
       var mouseY = 0;
 
-      var f = new Flock();
-
       var ccw = context.canvas.width;
       var cch = context.canvas.height;
+
+      var g = new Grid(ccw, cch, 100);
+
+      var f = new Flock(g);
+
       var sinkOffsetX = ccw / 4;
       var sinkOffsetY = cch / 4;
 
       f.createSource(ccw / 2, cch / 2);
 
       f.createSink(sinkOffsetX, sinkOffsetY);
-      f.createSink(ccw - sinkOffsetX, sinkOffsetY);
-      f.createSink(sinkOffsetX, cch - sinkOffsetY);
-      f.createSink(ccw - sinkOffsetX, cch - sinkOffsetY);
+      // f.createSink(ccw - sinkOffsetX, sinkOffsetY);
+      // f.createSink(sinkOffsetX, cch - sinkOffsetY);
+      // f.createSink(ccw - sinkOffsetX, cch - sinkOffsetY);
 
       f.createBoids(250);
 
