@@ -1,0 +1,310 @@
+
+<!DOCTYPE HTML>
+<html>
+  <head>
+    <title>honeymummies</title>
+    <script src="js/boid.js"></script>
+    <script src="js/lib/state-machine.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>
+    <style>
+      body {
+        margin: 0px;
+        padding: 0px;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="field" tabindex="1" width="500" height="500" style="outline:none"></canvas>
+    <script>
+      var canvas = document.getElementById('field');
+      var context = canvas.getContext('2d');
+      var last = performance.now();
+      var startTime = last;
+
+      context.canvas.width = window.innerWidth;
+      context.canvas.height = window.innerHeight;
+
+      var t = 0;
+      var dv = [0, 0];
+      var dp = [0, 0];
+
+      var frame = 0;
+      var uiText = "";
+      var fpsText = "0";
+
+      function step(timestamp) {
+        var progress = timestamp - last;
+        last = timestamp;
+        var dt = progress / 100;
+
+        // frames per second
+        elapsedTime = (timestamp - startTime) / 1000,
+        result = Math.floor((frame / elapsedTime));
+        if (elapsedTime > 1) {
+          startTime = timestamp;
+          frame = 0;
+        }
+
+        if (frame % 10 == 0) {
+          fpsText = result.toString();
+        }
+
+        context.fillStyle = "gray";
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        // context.clearRect(0, 0, canvas.width, canvas.height);
+
+        // context.strokeStyle = "lightgray";
+        // context.lineWidth = 1;
+        // for (var ix = 1; ix < canvas.width / 2; ix += canvas.width / 8) {
+        //   for (var iy = 1; iy < canvas.width / 2; iy += canvas.height / 8) {
+        //     context.beginPath();
+        //     context.moveTo(ix, 0);
+        //     context.lineTo(ix, canvas.height - 1);
+        //     context.moveTo(0, iy);
+        //     context.lineTo(canvas.width - 1, iy);
+        //     context.stroke();
+        //   }
+        // }
+
+        f.update(dt);
+        // f.cull();
+        f.move(context);
+        f.draw(context);
+
+        drawUI(context);
+
+        ++frame;
+
+        window.requestAnimationFrame(step);
+      }
+
+      // convenience function for console debugger (use in watch window)
+      function o(vec) {
+        return truncate(vec[0], 4) + ", " + truncate(vec[1], 4);
+      }
+
+      function truncate(num, numDigits) {
+        var multiplier = Math.pow(10, numDigits);
+        var adjNum = num * multiplier;
+        var truncatedNum = Math[adjNum < 0 ? 'ceil' : 'floor'](adjNum);
+        return truncatedNum / multiplier;
+      }
+
+      function randomInRange(min, max, wantInt) {
+        var max = (max === 0 || max) ? max : 1,
+            min = min || 0,
+            gen = min + (max - min) * Math.random();
+
+        return (wantInt) ? Math.round(gen) : gen;
+      }
+
+      function drawUI(context) {
+        drawMenu(context);
+
+        // fps counter
+        context.font = '8pt Futura';
+        context.fillStyle = "white";
+        var textDim = context.measureText(fpsText);
+        context.fillText(fpsText, context.canvas.width - (textDim.width + 2), 10);
+      }
+
+      var loggedInTextColor = "black"
+      var loggedOutTextColor = "darkred";
+      function drawMenu(context) {
+        switch (menuFsm.current) {
+          case 'visible':
+            context.fillStyle = user ? "lightskyblue" : "darkred";
+            context.beginPath();
+            context.arc(8, 8, 6, 0, 2*Math.PI, false);
+            context.fill();
+            break;
+          case 'active':
+            if (user) {
+              context.fillStyle = "darkred";
+              context.beginPath();
+              context.arc(context.canvas.width - 8, 8, 6, 0, 2*Math.PI, false);
+              context.fill();
+
+              context.fillStyle = "lightskyblue";
+              uiText = user.Hello;
+            } else {
+              if (uiText.length < 4) {
+                context.fillStyle = "gold";
+              } else {
+                context.fillStyle = "goldenrod";
+              }
+            }
+            for (var i = 0; i < 4; ++i) {
+              context.beginPath();
+              context.arc(8 + i * 16, 8, 6, 0, 2*Math.PI, false);
+              context.fill();
+            }
+
+            context.font = '8pt Futura';
+            context.fillStyle = user ? loggedInTextColor : loggedOutTextColor;
+            if (uiText.length < 4) {
+              for (var i = 0; i < uiText.length; ++i) {
+                var letter = uiText[i];
+                var w = context.measureText(letter);
+                var o = 8 - w.width / 2.0;
+                context.fillText(letter, o + (i * 16), 12);
+              }
+            } else if (uiText.length < 8) {
+              for (var i = uiText.length % 4; i < 4; ++i) {
+                var letter = uiText[i];
+                var w = context.measureText(letter);
+                var o = 8 - w.width / 2.0;
+                context.fillText(letter, o + (i * 16), 12);
+              }
+            }
+            break;
+          default:
+            // do nothing
+            return;
+        }
+      }
+
+      function handleKeyDown(e) {
+        if (user) {
+          return;
+        }
+
+        var key = e.keyCode;
+        if (key == 8) {
+          uiText = uiText.substring(0, uiText.length - 1);
+          return false;
+        }
+        uiText += String.fromCharCode((96<=key && key<=105)? key-48 : key);
+
+        if (uiText.length > 7) {
+          var username = uiText.substring(0, 4);
+          var password = uiText.substring(4, 8);
+          submitCredentials(username, password);
+        }
+      }
+
+      function handleMouseMove(e) {
+        getMousePos(e);
+
+        if ((mouseY <= 40) && (mouseX <= 40)) {
+          if (menuFsm.current == 'hidden') {
+            menuFsm.show();
+          }
+        } else if (menuFsm.current == 'visible') {
+          menuFsm.hide();
+        }
+      }
+
+      function getMousePos(e) {
+        if (e.pageX || e.pageY == 0) {
+          mouseX = e.pageX - e.target.offsetLeft;
+          mouseY = e.pageY - e.target.offsetTop;
+        } else if (e.offsetX || e.offsetY == 0) {
+          mouseX = e.offsetX;
+          mouseY = e.offsetY;
+        }
+      }
+
+      function handleMouseClick(e) {
+        // menu
+        if (menuFsm.current == 'active') {
+          if (user) {
+            if (mouseY <= 40 && mouseX >= e.target.offsetWidth - 40) {
+              user = null;
+              menuFsm.hide();
+              return;
+            }
+          }
+        }
+
+        if (menuFsm.current == 'hidden' && mouseY <= 40 && mouseX <= 40) {
+          menuFsm.show();
+        }
+
+        if (menuFsm.current == 'visible') {
+          menuFsm.activate();
+          uiText = "";
+        } else if (menuFsm.current != 'hidden'){
+          menuFsm.hide();
+        }
+
+        // debug mode
+        if (mouseY >= e.target.height - 40) {
+          f.toggleDebug();
+        }
+      }
+
+      function submitCredentials(username, password) {
+        // pretend log in...shhhh!
+        var p1 = new Promise(function(resolve, reject) {
+          window.setTimeout(function() { resolve(13); }, 500);
+        });
+        p1.then(function(val) { user = { "Hello": username } });
+
+        if (false) {
+          var data = {
+            "name": username
+          };
+
+          $.ajax({
+            url: "https://shjsc38xsl.execute-api.us-west-2.amazonaws.com/prod/honeymummiesresource",
+            type: "POST",
+            crossDomain: true,
+            contentType: 'application/json',
+            data: JSON.stringify(data),
+            dataType: 'json',
+            success: function(data) {
+              console.log('SUCCESS:' + data);
+              user = data;
+              uiText = "";
+            },
+            error: function(xhr, ajaxOptions, thrownError) {
+              console.log('ERROR: Invalid credentials');
+              user = null;
+              uiText = "";
+            }
+          });
+        }
+      }
+
+      var menuFsm = StateMachine.create({
+        initial: 'hidden',
+        events: [
+          { name: 'show',     from: 'hidden',               to: 'visible' },
+          { name: 'activate', from: 'visible',              to: 'active' },
+          { name: 'hide',     from: ['visible', 'active'],  to: 'hidden' }
+        ]
+      });
+
+      var user = null;
+
+      var mouseX = 0;
+      var mouseY = 0;
+
+      var ccw = context.canvas.width;
+      var cch = context.canvas.height;
+
+      var g = new Grid(ccw, cch, 100);
+
+      var f = new Flock(g);
+
+      var sinkOffsetX = ccw / 4;
+      var sinkOffsetY = cch / 4;
+
+      f.createSource(ccw / 2, cch / 2);
+
+      f.createSink(sinkOffsetX, sinkOffsetY);
+      // f.createSink(ccw - sinkOffsetX, sinkOffsetY);
+      // f.createSink(sinkOffsetX, cch - sinkOffsetY);
+      // f.createSink(ccw - sinkOffsetX, cch - sinkOffsetY);
+
+      f.createBoids(250);
+
+      canvas.addEventListener('keydown', handleKeyDown, false);
+      canvas.addEventListener('click', handleMouseClick, false);
+      canvas.addEventListener('mousemove', handleMouseMove, false);
+
+      window.requestAnimationFrame(step);
+    </script>
+  </body>
+</html>
