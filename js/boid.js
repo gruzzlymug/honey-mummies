@@ -8,6 +8,7 @@
 Boid.prototype.pos = [];
 Boid.prototype.vel = [];
 Boid.prototype.dvel = [];
+Boid.prototype.hue = [];
 Boid.prototype.turns = [];
 Boid.prototype.angle = [];
 Boid.prototype.neighbors = [];
@@ -75,14 +76,7 @@ Boid.prototype.align = function() {
     av[1] += nv[1];
   }
   av = normalize(av);
-
-  // TODO this should not be here...remove it
-  var vel = Boid.prototype.vel[this.id];
-  vel[0] += av[0] / 3.0;
-  vel[1] += av[1] / 3.0;
-  vel = normalize(vel);
-
-  return vel;
+  return av;
 }
 
 Boid.prototype.separate = function() {
@@ -113,6 +107,7 @@ Boid.prototype.separate = function() {
 
 Boid.prototype.cohere = function() {
   var cv = [0, 0];
+  var bp = Boid.prototype.pos[this.id];
   var neighbors = Boid.prototype.neighbors[this.id]
   var numNeighbors = neighbors.length;
   if (numNeighbors > 0) {
@@ -121,8 +116,8 @@ Boid.prototype.cohere = function() {
       var nid = neighbors[i];
       var np = Boid.prototype.pos[nid];
 
-      goal[0] += np[0];
-      goal[1] += np[1];
+      goal[0] += (np[0] - bp[0]);
+      goal[1] += (np[1] - bp[1]);
     }
     goal[0] /= numNeighbors;
     goal[1] /= numNeighbors;
@@ -154,23 +149,32 @@ Boid.prototype.gravitate = function() {
   return gv;
 }
 
+//
+// ▄   █ ▄▄  ██▄   ██     ▄▄▄▄▀ ▄███▄
+//  █  █   █ █  █  █ █ ▀▀▀ █    █▀   ▀
+// █   █ █▀▀▀  █   █ █▄▄█    █    ██▄▄
+// █   █ █     █  █  █  █   █     █▄   ▄▀
+// █▄ ▄█  █    ███▀     █  ▀      ▀███▀
+// ▀▀▀    ▀           █
+//                  ▀
+//
 Boid.prototype.update = function(dt) {
   // velocity modifiers
   var sv = this.separate();
   if (isNaN(sv[0]) || isNaN(sv[1])) {
     var break_here = true;
   }
-  var sf = 0;
+  var sf = 1;
   var cv = this.cohere();
   if (isNaN(cv[0]) || isNaN(cv[1])) {
     var break_here = true;
   }
-  var cf = 0;
+  var cf = 1;
   var av = this.align();
   if (isNaN(av[0]) || isNaN(av[1])) {
     var break_here = true;
   }
-  var af = 0;
+  var af = 1;
   var gv = this.gravitate();
   if (isNaN(gv[0]) || isNaN(gv[1])) {
     var break_here = true;
@@ -232,7 +236,7 @@ Boid.prototype.update = function(dt) {
 
 Boid.prototype.move = function(context) {
   var lifeForce = Boid.prototype.life[this.id];
-  var velocityFactor = 2.5; // lifeForce / 128.0;
+  var velocityFactor = 1.0; // lifeForce / 128.0;
   // lifeForce -= 0.1;
   // Boid.prototype.life[this.id] = Math.max(0, lifeForce);
 
@@ -263,7 +267,15 @@ Boid.prototype.move = function(context) {
     var break_here = true;
   }
 }
-
+//
+// ██▄   █▄▄▄▄ ██     ▄ ▄
+// █  █  █  ▄▀ █ █   █   █
+// █   █ █▀▀▌  █▄▄█ █ ▄   █
+// █  █  █  █  █  █ █  █  █
+// ███▀    █      █  █ █ █
+//        ▀      █    ▀ ▀
+//              ▀
+//
 Boid.prototype.draw = function(context) {
   var x = Boid.prototype.pos[this.id][0];
   var y = Boid.prototype.pos[this.id][1];
@@ -306,9 +318,10 @@ Boid.prototype.draw = function(context) {
   }
 
   // body
+  var selectedID = 1400;
   context.beginPath();
   context.arc(x, y, 3, 0, 2*Math.PI, false);
-  if (this.id == 14) {
+  if (this.id == selectedID) {
     context.fillStyle = "red"; // "white"; //"hsla(128,50%,50%,1)";
     context.fill();
     context.moveTo(x + neighborDist, y)
@@ -316,14 +329,15 @@ Boid.prototype.draw = function(context) {
     context.lineWidth = 0.5;
     context.strokeStyle = 'darkgray';
     context.stroke();
-  } else if (Boid.prototype.dbors[this.id].includes(14) && !Boid.prototype.neighbors[this.id].includes(14)) {
+  } else if (Boid.prototype.dbors[this.id].includes(selectedID) && !Boid.prototype.neighbors[this.id].includes(selectedID)) {
     context.fillStyle = "cornflowerblue";
     context.fill();
-  } else if (Boid.prototype.neighbors[this.id].includes(14)) {
+  } else if (Boid.prototype.neighbors[this.id].includes(selectedID)) {
     context.fillStyle = "white"; // "white"; //"hsla(128,50%,50%,1)";
     context.fill();
   } else if (true) {
-    context.fillStyle = "black"; // "white"; //"hsla(128,50%,50%,1)";
+    context.fillStyle = Boid.prototype.hue[this.id];
+    // context.fillStyle = "black"; // "white"; //"hsla(128,50%,50%,1)";
     context.fill();
   } else {
     context.fillStyle = "hsla(" + this.hue + ",100%,50%,1)";
@@ -407,35 +421,55 @@ Grid.prototype.width = 0;
 Grid.prototype.height = 0;
 Grid.prototype.cx = 0;
 Grid.prototype.cy = 0;
+Grid.prototype.minCellDim = 0;
 Grid.prototype.field = [];
 
 function Grid(width, height, minCellDim) {
-  // do something
-  Grid.prototype.width = width;
-  Grid.prototype.cx = 0;
-  while (width > minCellDim) {
-console.log(width);
-    width /= 2;
-    ++Grid.prototype.cx;
-  }
-console.log(width);
-  Grid.prototype.height = height;
-  Grid.prototype.cy = 0;
-  while (height > minCellDim) {
-    height /= 2;
-    ++Grid.prototype.cy;
-  }
   Grid.prototype.field = [];
+
+  // x
+  Grid.prototype.width = width;
+  Grid.prototype.cx = Math.ceil(width / minCellDim);
+
+  // y
+  Grid.prototype.height = height;
+  Grid.prototype.cy = Math.ceil(height / minCellDim);
+
+  Grid.prototype.minCellDim = minCellDim;
+
+  for (var x = 0; x < Grid.prototype.cx; ++x) {
+    Grid.prototype.field[x] = []
+    for (var y = 0; y < Grid.prototype.cy; ++y) {
+      Grid.prototype.field[x].push([]);
+    }
+  }
+
+  var endit = 0;
 }
 
 Grid.prototype.clear = function() {
 }
 
 Grid.prototype.add = function(positions) {
+  // clear the grid
+  for (var x = 0; x < Grid.prototype.field.length; ++x) {
+    for (var y = 0; y < Grid.prototype.field[0].length; ++y) {
+      Grid.prototype.field[x][y] = []
+    }
+  }
+
+  // do the adding
   var numPositions = positions.length;
   for (var idxPos = 0; idxPos < numPositions; ++idxPos) {
-
+    var bp = Boid.prototype.pos[idxPos];
+    var xc = Math.floor(bp[0] / Grid.prototype.minCellDim);
+    var yc = Math.floor(bp[1] / Grid.prototype.minCellDim);
+    Grid.prototype.field[xc][yc].push(idxPos);
+    // Boid.prototype.hue[idxPos] = "hsla(" + xc*256+yc*16 + ",100%,50%,1)";;
+    // Boid.prototype.hue[idxPos] = "hsla(" + xc*256+yc*65536 + ",100%,50%,1)";;
+    Boid.prototype.hue[idxPos] = "hsla(" + xc+yc*65536 + ",100%,50%,1)";;
   }
+  var blah = 0;
 }
 
 Grid.prototype.query = function() {

@@ -4,8 +4,10 @@
   <head>
     <title>honeymummies</title>
     <script src="js/boid.js"></script>
+    <script src="js/lib/lodash/4.6.1/lodash.js"></script>
+    <script src="js/lib/benchmark/2.1.0/benchmark.js"></script>
+    <script src="js/lib/jquery/2.2.0/jquery.min.js"></script>
     <script src="js/lib/state-machine.js"></script>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>
     <style>
       body {
         margin: 0px;
@@ -284,7 +286,7 @@
       var ccw = context.canvas.width;
       var cch = context.canvas.height;
 
-      var g = new Grid(ccw, cch, 100);
+      var g = new Grid(ccw, cch, 50);
 
       var f = new Flock(g);
 
@@ -298,11 +300,18 @@
       // f.createSink(sinkOffsetX, cch - sinkOffsetY);
       // f.createSink(ccw - sinkOffsetX, cch - sinkOffsetY);
 
-      f.createBoids(250);
+      f.createBoids(500);
 
       canvas.addEventListener('keydown', handleKeyDown, false);
       canvas.addEventListener('click', handleMouseClick, false);
       canvas.addEventListener('mousemove', handleMouseMove, false);
+
+      var bm = new Benchmark('stepper', step, {'async': true});
+      bm.on('cycle', function(event) {
+          console.log(String(event.target));
+        })
+      //bm.run({ 'async': true });
+      // Benchmark.runInContext(context);
 
       window.requestAnimationFrame(step);
     </script>
