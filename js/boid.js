@@ -16,7 +16,7 @@ Boid.prototype.dbors = [];
 Boid.prototype.life = [];
 Boid.prototype.numBoids = 0;
 
-var angle = 22.5;
+var angle = 10;
 Boid.prototype.rotLimit = Math.cos(angle * Math.PI / 180.0);
 Boid.prototype.rneg = buildRotationMatrix(-angle);
 Boid.prototype.rpos = buildRotationMatrix(angle);
@@ -94,7 +94,8 @@ Boid.prototype.separate = function() {
     d[1] = bp[1] - np[1];
     var ds = d[0]*d[0] + d[1]*d[1];
     if (ds < threshold) {
-      //d = normalize(d);
+      // NOTE add factor to prevent divide by 0
+      ds += 0.1;
       var factor = threshold / ds;
       av[0] += d[0] * factor;
       av[1] += d[1] * factor;
@@ -179,7 +180,7 @@ Boid.prototype.update = function(dt) {
   if (isNaN(gv[0]) || isNaN(gv[1])) {
     var break_here = true;
   }
-  var gf = 1;
+  var gf = 0;
   var bv = Boid.prototype.vel[this.id];
   if (isNaN(bv[0]) || isNaN(bv[1])) {
     var break_here = true;
@@ -292,10 +293,10 @@ Boid.prototype.draw = function(context) {
     }
   }
 
-  var depth = 1; // (this.id % 4 + 1) * 0.2 + 1.1
+  var depth = (this.id % 4 + 1) * 0.2 + 0.4
 
   // draw heading
-  if (true) {
+  if (false) {
     context.strokeStyle = "black"; //"hsla(" + this.hue + ",100%,50%,1)";
     context.beginPath();
     context.moveTo(x, y);
@@ -307,8 +308,8 @@ Boid.prototype.draw = function(context) {
   }
 
   // desired velocity
-  if (false) {
-    context.strokeStyle = "gray"; //"hsla(" + 255*255 + ",100%,50%,1)";
+  if (true) {
+    context.strokeStyle = "white"; //"hsla(" + 255*255 + ",100%,50%,1)";
     context.beginPath();
     context.moveTo(x, y);
     var vel = Boid.prototype.dvel[this.id];
@@ -320,7 +321,7 @@ Boid.prototype.draw = function(context) {
   // body
   var selectedID = 1400;
   context.beginPath();
-  context.arc(x, y, 3, 0, 2*Math.PI, false);
+  context.arc(x, y, 3*depth, 0, 2*Math.PI, false);
   if (this.id == selectedID) {
     context.fillStyle = "red"; // "white"; //"hsla(128,50%,50%,1)";
     context.fill();
@@ -337,7 +338,7 @@ Boid.prototype.draw = function(context) {
     context.fill();
   } else if (true) {
     context.fillStyle = Boid.prototype.hue[this.id];
-    // context.fillStyle = "black"; // "white"; //"hsla(128,50%,50%,1)";
+    context.fillStyle = "black"; // "white"; //"hsla(128,50%,50%,1)";
     context.fill();
   } else {
     context.fillStyle = "hsla(" + this.hue + ",100%,50%,1)";
@@ -415,64 +416,6 @@ ProjectedAxesDatabase.prototype.populateGrid = function() {
       ProjectedAxesDatabase.prototype.db[i][j] = 0;
     }
   }
-}
-
-Grid.prototype.width = 0;
-Grid.prototype.height = 0;
-Grid.prototype.cx = 0;
-Grid.prototype.cy = 0;
-Grid.prototype.minCellDim = 0;
-Grid.prototype.field = [];
-
-function Grid(width, height, minCellDim) {
-  Grid.prototype.field = [];
-
-  // x
-  Grid.prototype.width = width;
-  Grid.prototype.cx = Math.ceil(width / minCellDim);
-
-  // y
-  Grid.prototype.height = height;
-  Grid.prototype.cy = Math.ceil(height / minCellDim);
-
-  Grid.prototype.minCellDim = minCellDim;
-
-  for (var x = 0; x < Grid.prototype.cx; ++x) {
-    Grid.prototype.field[x] = []
-    for (var y = 0; y < Grid.prototype.cy; ++y) {
-      Grid.prototype.field[x].push([]);
-    }
-  }
-
-  var endit = 0;
-}
-
-Grid.prototype.clear = function() {
-}
-
-Grid.prototype.add = function(positions) {
-  // clear the grid
-  for (var x = 0; x < Grid.prototype.field.length; ++x) {
-    for (var y = 0; y < Grid.prototype.field[0].length; ++y) {
-      Grid.prototype.field[x][y] = []
-    }
-  }
-
-  // do the adding
-  var numPositions = positions.length;
-  for (var idxPos = 0; idxPos < numPositions; ++idxPos) {
-    var bp = Boid.prototype.pos[idxPos];
-    var xc = Math.floor(bp[0] / Grid.prototype.minCellDim);
-    var yc = Math.floor(bp[1] / Grid.prototype.minCellDim);
-    Grid.prototype.field[xc][yc].push(idxPos);
-    // Boid.prototype.hue[idxPos] = "hsla(" + xc*256+yc*16 + ",100%,50%,1)";;
-    // Boid.prototype.hue[idxPos] = "hsla(" + xc*256+yc*65536 + ",100%,50%,1)";;
-    Boid.prototype.hue[idxPos] = "hsla(" + xc+yc*65536 + ",100%,50%,1)";;
-  }
-  var blah = 0;
-}
-
-Grid.prototype.query = function() {
 }
 
 //
@@ -559,6 +502,7 @@ Flock.prototype.update = function(dt) {
     this.findNeighbors();
     for (var idxBoid = 0; idxBoid < this.numActive; ++idxBoid) {
       this.boids[idxBoid].update(dt);
+      this.grid.query(Boid.prototype.pos[idxBoid][0], Boid.prototype.pos[idxBoid][1]);
     }
   }
   ++this.frame;
@@ -663,6 +607,22 @@ Flock.prototype.move = function(context) {
 }
 
 Flock.prototype.draw = function(context) {
+  // grid
+  context.font = '8pt Futura';
+  context.fillStyle = "white";
+
+  var mcd = Grid.prototype.minCellDim;
+  for (var ix = 0; ix < Grid.prototype.field.length; ++ix) {
+      for (var iy = 0; iy < Grid.prototype.field[0].length; ++iy) {
+        var xx = ix * mcd + mcd * 0.5;
+        var yy = iy * mcd + mcd * 0.5;
+
+        var numBoidsInCell = Grid.prototype.field[ix][iy].length.toString();
+        var textDim = context.measureText(numBoidsInCell);
+        context.fillText(numBoidsInCell, xx - (textDim.width + 2), yy);
+      }
+  }
+
   // boids
   var numBoids = this.numActive;
   for (var idxBoid = 0; idxBoid < numBoids; ++idxBoid) {
