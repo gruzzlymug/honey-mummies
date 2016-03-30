@@ -3,6 +3,7 @@
 <html>
   <head>
     <title>honeymummies</title>
+    <script src="js/grid.js"></script>
     <script src="js/boid.js"></script>
     <script src="js/lib/lodash/4.6.1/lodash.js"></script>
     <script src="js/lib/benchmark/2.1.0/benchmark.js"></script>
@@ -112,6 +113,7 @@
 
       var loggedInTextColor = "black"
       var loggedOutTextColor = "darkred";
+
       function drawMenu(context) {
         switch (menuFsm.current) {
           case 'visible':
@@ -124,7 +126,8 @@
             if (user) {
               context.fillStyle = "darkred";
               context.beginPath();
-              context.arc(context.canvas.width - 8, 8, 6, 0, 2*Math.PI, false);
+              // context.arc(context.canvas.width - 8, 8, 6, 0, 2*Math.PI, false);
+              context.arc(8 + 5 * 16, 8, 6, 0, 2*Math.PI, false);
               context.fill();
 
               context.fillStyle = "lightskyblue";
@@ -211,7 +214,8 @@
         // menu
         if (menuFsm.current == 'active') {
           if (user) {
-            if (mouseY <= 40 && mouseX >= e.target.offsetWidth - 40) {
+            // if (mouseY <= 40 && mouseX >= e.target.offsetWidth - 40) {
+            if (mouseY <= 40 && mouseX >= 4*16+8 && mouseX < 7*16+8) {
               user = null;
               menuFsm.hide();
               return;
@@ -300,7 +304,7 @@
       // f.createSink(sinkOffsetX, cch - sinkOffsetY);
       // f.createSink(ccw - sinkOffsetX, cch - sinkOffsetY);
 
-      f.createBoids(500);
+      f.createBoids(250);
 
       canvas.addEventListener('keydown', handleKeyDown, false);
       canvas.addEventListener('click', handleMouseClick, false);
