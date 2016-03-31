@@ -338,7 +338,7 @@ Boid.prototype.draw = function(context) {
     context.fill();
   } else if (true) {
     context.fillStyle = Boid.prototype.hue[this.id];
-    context.fillStyle = "black"; // "white"; //"hsla(128,50%,50%,1)";
+    context.fillStyle = "cornflowerblue"; // "white"; //"hsla(128,50%,50%,1)";
     context.fill();
   } else {
     context.fillStyle = "hsla(" + this.hue + ",100%,50%,1)";
@@ -609,7 +609,7 @@ Flock.prototype.move = function(context) {
 Flock.prototype.draw = function(context) {
   // grid
   context.font = '8pt Futura';
-  context.fillStyle = "white";
+  context.fillStyle = "yellow";
 
   var mcd = Grid.prototype.minCellDim;
   for (var ix = 0; ix < Grid.prototype.field.length; ++ix) {

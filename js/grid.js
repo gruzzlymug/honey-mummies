@@ -57,18 +57,25 @@ Grid.prototype.add = function(positions) {
 }
 
 Grid.prototype.query = function(qx, qy) {
-  var xc = Math.floor(qx / Grid.prototype.minCellDim);
-  var yc = Math.floor(qy / Grid.prototype.minCellDim);
+  var distance = 50;
+  var x0 = Math.floor((qx - distance) / Grid.prototype.minCellDim);
+  x0 = Math.max(0, x0);
+  var x1 = Math.floor((qx + distance) / Grid.prototype.minCellDim);
+  x1 = Math.min(Grid.prototype.field.length - 1, x1);
+  var y0 = Math.floor((qy - distance) / Grid.prototype.minCellDim);
+  y0 = Math.max(0, y0);
+  var y1 = Math.floor((qy + distance) / Grid.prototype.minCellDim);
+  y1 = Math.min(Grid.prototype.field[0].length - 1, y1);
 
   var candidates = [];
-  var x0 = Math.max(0, xc - 1);
-  var x1 = Math.min(Grid.prototype.field.length, xc + 1);
-  var y0 = Math.max(0, yc - 1);
-  var y1 = Math.min(Grid.prototype.field[0].length, yc + 1);
   for (var x = x0; x <= x1; ++x) {
     for (var y = y0; y <= y1; ++y) {
-      var fff = Grid.prototype.field[xc][yc];
-      var qmv = fff;
+      candidates.push.apply(candidates, Grid.prototype.field[x][y]);
     }
+  }
+
+  var numCandidates = candidates.length;
+  for (var idxCandidate = 0; idxCandidate < numCandidates; ++idxCandidate) {
+
   }
 }
