@@ -56,19 +56,48 @@ Grid.prototype.add = function(positions) {
   Grid.prototype.positions = positions;
 }
 
-Grid.prototype.query = function(qx, qy) {
-  var xc = Math.floor(qx / Grid.prototype.minCellDim);
-  var yc = Math.floor(qy / Grid.prototype.minCellDim);
+Grid.prototype.findNeighbors = function(threshold, maxNeighbors) {
+  var scaleFactor = 1000;
+  var numBoids = Boid.prototype.numBoids;
 
-  var candidates = [];
-  var x0 = Math.max(0, xc - 1);
-  var x1 = Math.min(Grid.prototype.field.length, xc + 1);
-  var y0 = Math.max(0, yc - 1);
-  var y1 = Math.min(Grid.prototype.field[0].length, yc + 1);
-  for (var x = x0; x <= x1; ++x) {
-    for (var y = y0; y <= y1; ++y) {
-      var fff = Grid.prototype.field[xc][yc];
-      var qmv = fff;
+  for (var idxBoid = 0; idxBoid < numBoids; ++idxBoid) {
+    var bp = Boid.prototype.pos[idxBoid];
+    var qx = bp[0];
+    var qy = bp[1];
+
+    var x0 = Math.floor((qx - threshold) / Grid.prototype.minCellDim);
+    x0 = Math.max(0, x0);
+    var x1 = Math.floor((qx + threshold) / Grid.prototype.minCellDim);
+    x1 = Math.min(Grid.prototype.field.length - 1, x1);
+    var y0 = Math.floor((qy - threshold) / Grid.prototype.minCellDim);
+    y0 = Math.max(0, y0);
+    var y1 = Math.floor((qy + threshold) / Grid.prototype.minCellDim);
+    y1 = Math.min(Grid.prototype.field[0].length - 1, y1);
+
+    var candidates = [];
+    for (var x = x0; x <= x1; ++x) {
+      for (var y = y0; y <= y1; ++y) {
+        candidates.push.apply(candidates, Grid.prototype.field[x][y]);
+      }
     }
+
+    var neighbors = [];
+    var tsqr = threshold * threshold;
+    var numCandidates = candidates.length;
+    for (var idxCandidate = 0; idxCandidate < numCandidates; ++idxCandidate) {
+      var candidateID = candidates[idxCandidate];
+      var cpos = Grid.prototype.positions[candidateID];
+      var dx = cpos[0] - qx;
+      var dy = cpos[1] - qy;
+      var dsqr = dx*dx + dy*dy;
+      if (dsqr <= tsqr && dsqr > nearlyZero) {
+        neighbors.push(Math.ceil(dsqr) * scaleFactor + candidateID);
+      }
+    }
+    // sort neighbors to get the closest
+    neighbors = neighbors.sort(function(a,b){return a-b});
+    neighbors = neighbors.slice(0, maxNeighbors);
+    // strip off the position info to leave the IDs
+    Boid.prototype.neighbors[idxBoid] = neighbors.map(function(x){return x % scaleFactor});
   }
 }
