@@ -12,17 +12,17 @@ Boid.prototype.hue = [];
 Boid.prototype.turns = [];
 Boid.prototype.angle = [];
 Boid.prototype.neighbors = [];
-Boid.prototype.dbors = [];
 Boid.prototype.life = [];
 Boid.prototype.numBoids = 0;
 
-var angle = 10;
+var angle = 15.0;
 Boid.prototype.rotLimit = Math.cos(angle * Math.PI / 180.0);
 Boid.prototype.rneg = buildRotationMatrix(-angle);
 Boid.prototype.rpos = buildRotationMatrix(angle);
 
 var nearlyZero = 0.0001;
-var neighborDist = 75;
+var neighborDist = 50;
+var maxNeighbors = 10;
 
 function normalize(v) {
   var lv = Math.sqrt(v[0]*v[0] + v[1]*v[1]);
@@ -59,7 +59,6 @@ function Boid(p, v, hue) {
   Boid.prototype.vel[this.id] = v;
   Boid.prototype.dvel[this.id] = [0, 0];
   Boid.prototype.neighbors[this.id] = [];
-  Boid.prototype.dbors[this.id] = [];
   Boid.prototype.turns[this.id] = 0;
   Boid.prototype.life[this.id] = randomInRange(127, 255, true);
 }
@@ -180,7 +179,7 @@ Boid.prototype.update = function(dt) {
   if (isNaN(gv[0]) || isNaN(gv[1])) {
     var break_here = true;
   }
-  var gf = 0;
+  var gf = 1;
   var bv = Boid.prototype.vel[this.id];
   if (isNaN(bv[0]) || isNaN(bv[1])) {
     var break_here = true;
@@ -237,7 +236,7 @@ Boid.prototype.update = function(dt) {
 
 Boid.prototype.move = function(context) {
   var lifeForce = Boid.prototype.life[this.id];
-  var velocityFactor = 1.0; // lifeForce / 128.0;
+  var velocityFactor = 1; // lifeForce / 128.0;
   // lifeForce -= 0.1;
   // Boid.prototype.life[this.id] = Math.max(0, lifeForce);
 
@@ -293,7 +292,7 @@ Boid.prototype.draw = function(context) {
     }
   }
 
-  var depth = (this.id % 4 + 1) * 0.2 + 0.4
+  var depth = (this.id % 5 + 1) * 0.1 + 0.7
 
   // draw heading
   if (false) {
@@ -319,7 +318,7 @@ Boid.prototype.draw = function(context) {
   }
 
   // body
-  var selectedID = 1400;
+  var selectedID = 14;
   context.beginPath();
   context.arc(x, y, 3*depth, 0, 2*Math.PI, false);
   if (this.id == selectedID) {
@@ -330,9 +329,6 @@ Boid.prototype.draw = function(context) {
     context.lineWidth = 0.5;
     context.strokeStyle = 'darkgray';
     context.stroke();
-  } else if (Boid.prototype.dbors[this.id].includes(selectedID) && !Boid.prototype.neighbors[this.id].includes(selectedID)) {
-    context.fillStyle = "cornflowerblue";
-    context.fill();
   } else if (Boid.prototype.neighbors[this.id].includes(selectedID)) {
     context.fillStyle = "white"; // "white"; //"hsla(128,50%,50%,1)";
     context.fill();
@@ -358,67 +354,6 @@ Boid.prototype.draw = function(context) {
 }
 
 //
-ProjectedAxesDatabase.prototype.xs = [];
-ProjectedAxesDatabase.prototype.ys = [];
-ProjectedAxesDatabase.prototype.cx = 16;
-ProjectedAxesDatabase.prototype.cy = 16;
-ProjectedAxesDatabase.prototype.db = [];
-
-function ProjectedAxesDatabase() {
-  var cx = ProjectedAxesDatabase.prototype.cx;
-  var cy = ProjectedAxesDatabase.prototype.cy;
-  for (var i = 0; i < cx; ++i) {
-    ProjectedAxesDatabase.prototype.db[i] = [];
-    for (var j = 0; j < cx; ++j) {
-      ProjectedAxesDatabase.prototype.db[i][j] = 0;
-    }
-  }
-}
-
-ProjectedAxesDatabase.prototype.update = function(p, scaleFactor) {
-  this.sortAxes(p, scaleFactor);
-
-}
-
-ProjectedAxesDatabase.prototype.sortAxes = function(p, scaleFactor) {
-  var numBoids = Boid.prototype.pos.length
-
-  var xs = ProjectedAxesDatabase.prototype.xs;
-  var ys = ProjectedAxesDatabase.prototype.ys;
-  for (var boidId = 0; boidId < numBoids; ++boidId) {
-    // embed axis position and id into each number
-    xs[boidId] = Math.round(p[boidId][0]) * scaleFactor + boidId;
-    if (isNaN(xs[boidId])) {
-      var break_here = true;
-    }
-    ys[boidId] = Math.round(p[boidId][1]) * scaleFactor + boidId;
-    if (isNaN(ys[boidId])) {
-      var break_here = true;
-    }
-  }
-  // now sort by position and preserve id
-  xs = xs.sort(function(a,b){return a-b});
-  ys = ys.sort(function(a,b){return a-b});
-}
-
-ProjectedAxesDatabase.prototype.populateGrid = function() {
-  var cx = ProjectedAxesDatabase.prototype.cx;
-  var cy = ProjectedAxesDatabase.prototype.cy;
-  var mx = 1000 / cx;
-  var my = 1000 / cy;
-  for (var i = 0; i < cx; ++i) {
-    ProjectedAxesDatabase.prototype.db[i] = [];
-    var numInX = [];
-    while (1 < 0) {
-      // do something
-    }
-    for (var j = 0; j < cx; ++j) {
-      ProjectedAxesDatabase.prototype.db[i][j] = 0;
-    }
-  }
-}
-
-//
 // ▄████  █    ████▄ ▄█▄    █  █▀
 // █▀   ▀ █    █   █ █▀ ▀▄  █▄█
 // █▀▀    █    █   █ █   ▀  █▀▄
@@ -441,7 +376,6 @@ function Flock(grid) {
   this.sources = [];
   this.sinks = [];
   this.frame = 0;
-  this.pj = new ProjectedAxesDatabase();
   Flock.prototype.boids[this.id] = [];
 
   this.grid = grid;
@@ -468,17 +402,6 @@ Flock.prototype.toggleDebug = function() {
   Flock.prototype.debug = !Flock.prototype.debug;
 }
 
-// TODO break on NaNs in ps (esp when limiting neighbors by distance)
-function projector(i, id, ps, nearestNeighbors, numNearest, scaleFactor) {
-  var lowerLimit = Math.max(i - numNearest, 0);
-  var upperLimit = Math.min(i + numNearest, Boid.prototype.numBoids);
-  for (var idxNeighbor = lowerLimit; idxNeighbor < upperLimit; ++idxNeighbor) {
-    pid = ps[idxNeighbor] % scaleFactor;
-    if (pid == id) continue;
-    nearestNeighbors.push(pid);
-  }
-}
-
 Flock.prototype.update = function(dt) {
   var numBoids = this.boids.length;
   if (this.frame % 1 == 0) {
@@ -495,14 +418,10 @@ Flock.prototype.update = function(dt) {
 
   if (this.frame % 5 == 0) {
     this.grid.add(Boid.prototype.pos);
+    this.grid.findNeighbors(neighborDist, maxNeighbors);
 
-    var scaleFactor = 1000;
-    this.pj.update(Boid.prototype.pos, scaleFactor);
-
-    this.findNeighbors();
     for (var idxBoid = 0; idxBoid < this.numActive; ++idxBoid) {
       this.boids[idxBoid].update(dt);
-      this.grid.query(Boid.prototype.pos[idxBoid][0], Boid.prototype.pos[idxBoid][1]);
     }
   }
   ++this.frame;
@@ -532,70 +451,6 @@ Flock.prototype.cull = function() {
       Boid.prototype.life[idxBoid] = Boid.prototype.life[this.numActive - 1];
       --this.numActive;
     }
-  }
-}
-
-Flock.prototype.findNeighbors = function() {
-  var numBoids = Boid.prototype.numBoids;
-  var scaleFactor = 1000;
-  if (numBoids >= scaleFactor) {
-    var too_many_boids = true;
-  }
-
-  var xs = this.pj.xs;
-  var ys = this.pj.ys;
-
-  var xnn = []
-  var ynn = []
-  for (var i = 0; i < numBoids; ++i) {
-    xnn[i] = [];
-    ynn[i] = [];
-  }
-
-  for (var i = 0; i < numBoids; ++i) {
-    var xid = xs[i] % scaleFactor;
-    if (xnn[xid] === undefined) {
-      var break_here = true;
-    }
-    projector(i, xid, xs, xnn[xid], 4, scaleFactor);
-    var yid = ys[i] % scaleFactor;
-    if (ynn[yid] === undefined) {
-      var break_here = true;
-    }
-    projector(i, yid, ys, ynn[yid], 4, scaleFactor);
-  }
-
-  for (var i = 0; i < numBoids; ++i) {
-    // NOTE the all array can have dups
-    var all = xnn[i].concat(ynn[i]);
-    Boid.prototype.dbors[i] = all;
-    var boid = Boid.prototype.pos[i];
-    var closest = {};
-    for (a = 0; a < all.length; ++a) {
-      var neighbor = Boid.prototype.pos[all[a]];
-      var dx = boid[0] - neighbor[0];
-      var dy = boid[1] - neighbor[1];
-      dist = dx*dx + dy*dy;
-      closest[dist] = all[a];
-    }
-    var c4k = Object.keys(closest).sort(function(a,b){return a-b});
-    var c4n = [];
-    // want 4 neighbors, but could have fewer in rare cases
-    var numNeigbors = Math.min(4, c4k.length);
-    for (var ni = 0; ni < numNeigbors; ++ni) {
-      var neighborId = closest[c4k[ni]];
-      // check distance to neighbor
-      var bp = Boid.prototype.pos[i];
-      var np = Boid.prototype.pos[neighborId];
-      var dx = bp[0] - np[0];
-      var dy = bp[1] - np[1];
-      // limit neighbors to range
-      var dsqr = dx*dx + dy*dy;
-      if (dsqr < neighborDist*neighborDist) {
-        c4n.push(neighborId);
-      }
-    }
-    Boid.prototype.neighbors[i] = c4n;
   }
 }
 
