@@ -28,9 +28,6 @@ function Grid(width, height, minCellDim) {
   var endit = 0;
 }
 
-Grid.prototype.clear = function() {
-}
-
 Grid.prototype.add = function(positions) {
   // clear the grid
   for (var x = 0; x < Grid.prototype.field.length; ++x) {
@@ -54,6 +51,29 @@ Grid.prototype.add = function(positions) {
 
   // save the positions for the queries
   Grid.prototype.positions = positions;
+}
+
+Grid.prototype.query = function(mx, my) {
+  var xc = Math.floor(mx / Grid.prototype.minCellDim);
+  var yc = Math.floor(my / Grid.prototype.minCellDim);
+
+  var selectedID = null;
+  var minToBoidSqr = Grid.prototype.minCellDim * Grid.prototype.minCellDim;
+  var candidates = Grid.prototype.field[xc][yc];
+  var numCandidates = candidates.length;
+  for (var idxCandidate = 0; idxCandidate < numCandidates; ++idxCandidate) {
+    var candidateID = candidates[idxCandidate];
+    var pos = Grid.prototype.positions[candidateID];
+    var dx = pos[0] - mx;
+    var dy = pos[1] - my;
+    var toBoidSqr = dx*dx + dy*dy;
+    if (toBoidSqr < 121 && toBoidSqr < minToBoidSqr) {
+      selectedID = candidateID;
+      minToBoidSqr = toBoidSqr;
+    }
+  }
+
+  return selectedID;
 }
 
 Grid.prototype.findNeighbors = function(threshold, maxNeighbors) {

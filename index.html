@@ -211,7 +211,20 @@
       }
 
       function handleMouseClick(e) {
-        // menu
+        manipulateMenu();
+
+        var boidID = g.query(mouseX, mouseY);
+        if (boidID) {
+          f.selectBoid(boidID);
+        }
+
+        // debug mode
+        if (mouseY >= e.target.height - 40) {
+          f.toggleDebug();
+        }
+      }
+
+      function manipulateMenu() {
         if (menuFsm.current == 'active') {
           if (user) {
             // if (mouseY <= 40 && mouseX >= e.target.offsetWidth - 40) {
@@ -230,13 +243,8 @@
         if (menuFsm.current == 'visible') {
           menuFsm.activate();
           uiText = "";
-        } else if (menuFsm.current != 'hidden'){
+        } else if (menuFsm.current != 'hidden') {
           menuFsm.hide();
-        }
-
-        // debug mode
-        if (mouseY >= e.target.height - 40) {
-          f.toggleDebug();
         }
       }
 

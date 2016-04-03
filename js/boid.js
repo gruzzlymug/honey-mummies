@@ -55,12 +55,18 @@ function rotate(v, m) {
 function Boid(p, v, hue) {
   this.id = Boid.prototype.numBoids++;
   this.hue = hue;
+  this.selected = false;
+
   Boid.prototype.pos[this.id] = p;
   Boid.prototype.vel[this.id] = v;
   Boid.prototype.dvel[this.id] = [0, 0];
   Boid.prototype.neighbors[this.id] = [];
   Boid.prototype.turns[this.id] = 0;
   Boid.prototype.life[this.id] = randomInRange(127, 255, true);
+}
+
+Boid.prototype.select = function() {
+  this.selected = !this.selected;
 }
 
 Boid.prototype.align = function() {
@@ -292,7 +298,7 @@ Boid.prototype.draw = function(context) {
     }
   }
 
-  var depth = (this.id % 5 + 1) * 0.1 + 0.7
+  var depth = 1; //(this.id % 5 + 1) * 0.1 + 0.7
 
   // draw heading
   if (false) {
@@ -318,10 +324,10 @@ Boid.prototype.draw = function(context) {
   }
 
   // body
-  var selectedID = 14;
+  var isSelected = this.selected == true;
   context.beginPath();
-  context.arc(x, y, 3*depth, 0, 2*Math.PI, false);
-  if (this.id == selectedID) {
+  context.arc(x, y, 4*depth, 0, 2*Math.PI, false);
+  if (isSelected) {
     context.fillStyle = "red"; // "white"; //"hsla(128,50%,50%,1)";
     context.fill();
     context.moveTo(x + neighborDist, y)
@@ -329,9 +335,9 @@ Boid.prototype.draw = function(context) {
     context.lineWidth = 0.5;
     context.strokeStyle = 'darkgray';
     context.stroke();
-  } else if (Boid.prototype.neighbors[this.id].includes(selectedID)) {
-    context.fillStyle = "white"; // "white"; //"hsla(128,50%,50%,1)";
-    context.fill();
+  // } else if (Boid.prototype.neighbors[this.id].includes(selectedID)) {
+  //   context.fillStyle = "white"; // "white"; //"hsla(128,50%,50%,1)";
+  //   context.fill();
   } else if (true) {
     context.fillStyle = Boid.prototype.hue[this.id];
     context.fillStyle = "cornflowerblue"; // "white"; //"hsla(128,50%,50%,1)";
@@ -400,6 +406,10 @@ Flock.prototype.setTarget = function(boid) {
 
 Flock.prototype.toggleDebug = function() {
   Flock.prototype.debug = !Flock.prototype.debug;
+}
+
+Flock.prototype.selectBoid = function(boidID) {
+  this.boids[boidID].select();
 }
 
 Flock.prototype.update = function(dt) {
