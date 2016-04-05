@@ -5,11 +5,9 @@
     <title>honeymummies</title>
     <script src="js/grid.js"></script>
     <script src="js/boid.js"></script>
-    <script src="js/lib/lodash/4.6.1/lodash.js"></script>
-    <script src="js/lib/benchmark/2.1.0/benchmark.js"></script>
     <script src="js/lib/jquery/2.2.0/jquery.min.js"></script>
     <script src="js/lib/state-machine.js"></script>
-    <script src="http://localhost:8080/socket.io/socket.io.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
     <style>
       body {
         margin: 0px;
@@ -293,7 +291,10 @@
 
       var user = null;
 
-      var socket = io();
+      if (typeof io != 'undefined') {
+        var socket = io();
+        console.log('created a client socket!')
+      }
 
       var mouseX = 0;
       var mouseY = 0;
@@ -320,13 +321,6 @@
       canvas.addEventListener('keydown', handleKeyDown, false);
       canvas.addEventListener('click', handleMouseClick, false);
       canvas.addEventListener('mousemove', handleMouseMove, false);
-
-      var bm = new Benchmark('stepper', step, {'async': true});
-      bm.on('cycle', function(event) {
-          console.log(String(event.target));
-        })
-      //bm.run({ 'async': true });
-      // Benchmark.runInContext(context);
 
       window.requestAnimationFrame(step);
     </script>
