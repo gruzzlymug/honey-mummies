@@ -2,3 +2,4 @@ NOTES.md
 **.DS_Store
 **.swp
 profile/*
+server/node_modules/*
