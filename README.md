@@ -4,5 +4,11 @@
 
 ### 3rd party code
 
+#### Client
+
 * [Javascript Finite State Machine](https://github.com/jakesgordon/javascript-state-machine)
 * jQuery
+
+#### Server
+
+* NodeJS
