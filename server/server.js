@@ -6,7 +6,6 @@ io.on('connection', function(socket) {
     console.log('a user connected');
 });
 
-http.listen(8080, function() {
-    console.log('listening on *:8080.');
+http.listen(61337, function() {
+    console.log('listening on *:61337.');
 });
-
