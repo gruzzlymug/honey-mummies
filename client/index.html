@@ -223,7 +223,6 @@
 
         var boidID = g.query(mouseX, mouseY);
         if (boidID) {
-          f.selectBoid(boidID);
           socket.emit('select', boidID);
         }
 
@@ -303,7 +302,11 @@
 
       if (typeof io != 'undefined') {
         var socket = io();
-        console.log('created a client socket!')
+        console.log('created socket');
+        socket.on('boid', function(boidID) {
+          console.log('got boid message: ' + boidID);
+          f.selectBoid(boidID);
+        });
       }
 
       var mouseX = 0;
@@ -326,7 +329,7 @@
       // f.createSink(sinkOffsetX, cch - sinkOffsetY);
       // f.createSink(ccw - sinkOffsetX, cch - sinkOffsetY);
 
-      f.createBoids(10);
+      f.createBoids(50);
 
       canvas.addEventListener('keydown', handleKeyDown, false);
       canvas.addEventListener('click', handleMouseClick, false);

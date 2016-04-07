@@ -4,7 +4,8 @@ var io = require('socket.io')(http);
 
 io.on('connection', function(socket) {
     socket.on('select', function(boidID) {
-        console.log('select: ' + boidID);
+        console.log('boid: ' + boidID);
+        io.emit('boid', boidID);
     });
 });
 
