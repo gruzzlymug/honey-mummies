@@ -92,10 +92,19 @@
         return truncatedNum / multiplier;
       }
 
+      // seedable random number generator
+      // NOTE this tends toward 0 and 1 but is fast and good enough for now.
+      function random() {
+        // NOTE temporarily hard-coded. kg 2016-04-05
+        var seed = 23;
+        var x = Math.sin(seed) * 10000;
+        return x - Math.floor(x);
+      }
+
       function randomInRange(min, max, wantInt) {
         var max = (max === 0 || max) ? max : 1,
             min = min || 0,
-            gen = min + (max - min) * Math.random();
+            gen = min + (max - min) * random();
 
         return (wantInt) ? Math.round(gen) : gen;
       }
@@ -214,7 +223,7 @@
 
         var boidID = g.query(mouseX, mouseY);
         if (boidID) {
-          f.selectBoid(boidID);
+          socket.emit('select', boidID);
         }
 
         // debug mode
@@ -293,7 +302,11 @@
 
       if (typeof io != 'undefined') {
         var socket = io();
-        console.log('created a client socket!')
+        console.log('created socket');
+        socket.on('boid', function(boidID) {
+          console.log('got boid message: ' + boidID);
+          f.selectBoid(boidID);
+        });
       }
 
       var mouseX = 0;
@@ -316,7 +329,7 @@
       // f.createSink(sinkOffsetX, cch - sinkOffsetY);
       // f.createSink(ccw - sinkOffsetX, cch - sinkOffsetY);
 
-      f.createBoids(750);
+      f.createBoids(50);
 
       canvas.addEventListener('keydown', handleKeyDown, false);
       canvas.addEventListener('click', handleMouseClick, false);

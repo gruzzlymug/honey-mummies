@@ -442,11 +442,11 @@ function createBoid() {
   var idxSource = randomInRange(0, numSources - 1, true);
   var src = Flock.prototype.sources[idxSource];
   var p = [src[0], src[1]];
-  p[0] += Math.random() * 6 - 3;
-  p[1] += Math.random() * 6 - 3;
+  p[0] += random() * 6 - 3;
+  p[1] += random() * 6 - 3;
 
   // set velocity (aka heading)
-  var v = [(Math.random() - 0.5), (Math.random() - 0.5)];
+  var v = [(random() - 0.5), (random() - 0.5)];
   v = normalize(v);
 
   var hue = randomInRange(128, 255, 1);
