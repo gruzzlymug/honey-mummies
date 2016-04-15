@@ -1,0 +1,46 @@
+<html>
+  <head>
+    <title>Sploosh</title>
+    <script src="js/lib/state-machine.js"></script>
+    <script src="js/screen.js"></script>
+  </head>
+  <body>
+    <canvas id="field" tabindex="1" width="500" height="500" style="outline:none"></canvas>
+    <script>
+      var canvas = document.getElementById('field');
+      var context = canvas.getContext('2d');
+
+      context.canvas.width = window.innerWidth;
+      context.canvas.height = window.innerHeight;
+
+      var splash = new Screen('SPLASH');
+      var lobby = new Screen('LOBBY');
+
+      var activeScreen = splash;
+
+      canvas.addEventListener('keydown', handleKeyDown, false);
+      canvas.addEventListener('click', handleMouseClick, false);
+      canvas.addEventListener('mousemove', handleMouseMove, false);
+
+      window.requestAnimationFrame(screenStep);
+
+      //========================================================================
+      // FUNCTIONS
+      //========================================================================
+      function handleKeyDown(e) {
+      }
+
+      function handleMouseClick(e) {
+        activeScreen = activeScreen == splash ? lobby : splash;
+      }
+
+      function handleMouseMove(e) {
+      }
+
+      function screenStep(timestamp) {
+        activeScreen.step(timestamp);
+        window.requestAnimationFrame(screenStep);
+      }
+    </script>
+  </body>
+</html>

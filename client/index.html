@@ -34,6 +34,113 @@
       var uiText = "";
       var fpsText = "0";
 
+      function dropperStep(timestamp) {
+        context.fillStyle = "lightgray";
+        context.fillRect(0, 0, canvas.width, canvas.height);
+
+        var centerX = canvas.width / 2;
+        var centerY = canvas.height / 2;
+
+        // context.lineWidth = 2;
+        // context.strokeStyle = "red";
+        // context.beginPath();
+        // context.moveTo(0, centerY);
+        // context.lineTo(2 * centerX, centerY);
+        // context.stroke();
+        // context.closePath();
+
+        var text = "HONEYMUMMIES";
+        var numDots = text.length;
+        var dotRadius = 21;
+        var border = 15;
+
+        var startX = centerX - (numDots * dotRadius * 2 + border * (numDots - 1)) / 2 + dotRadius;
+        var dropHeight = centerY + 2 * dotRadius;
+
+        context.font = '14pt Futura';
+
+        var speed = 16;
+        var aaa = dropHeight / speed;
+        var numStable = Math.min(Math.floor(frame / aaa), numDots);
+        // stable title
+        for (var idxDot = 0; idxDot < numStable; ++idxDot) {
+          var letter = text[idxDot];
+          drawBall(letter, startX, centerY, dotRadius);
+          startX += 2 * dotRadius + border;
+        }
+        // falling title
+        var yyy = frame % aaa;
+        if (frame < numDots * aaa) {
+          posY = Math.round(centerY - dropHeight + (speed * yyy));
+
+          // var ppyy = c*((t=t/d-1)*t*((s+1)*t + s) + 1) + b;
+
+          var letter = text[numStable];
+          drawBall(letter, startX, posY, dotRadius);
+          startX += 2 * dotRadius + border;
+        }
+
+        ++frame;
+
+        window.requestAnimationFrame(dropperStep);
+      }
+
+      function drawBall(letter, x, y, dotRadius) {
+        context.beginPath();
+        context.strokeStyle = "white";
+        context.fillStyle = "black";
+        context.arc(x, y, dotRadius, 0, 2*Math.PI, false);
+        context.fill();
+        context.stroke();
+        context.closePath();
+
+        var w = context.measureText(letter);
+        var o = x - w.width / 2.0;
+        context.fillStyle = "white";
+        context.fillText(letter, o, y + 7);
+      }
+
+      function splashStep(timestamp) {
+        context.fillStyle = "lightgray";
+        context.fillRect(0, 0, canvas.width, canvas.height);
+
+        var centerX = canvas.width / 2;
+        var centerY = canvas.height / 2;
+
+        var text = "HONEYMUMMIES";
+        var numDots = text.length;
+        var dotRadius = 20;
+        var border = 30;
+        var waveHeight = 60;
+
+        var startX = centerX - (numDots * dotRadius * 2 + border * (numDots - 1)) / 2 + dotRadius;
+        var angleDeg = frame % 22.5 * 16;
+
+        context.font = '14pt Futura';
+        for (var idxDot = 0; idxDot < numDots; ++idxDot) {
+          var offsetY = Math.sin(angleDeg * Math.PI / 180) * waveHeight;
+          posY = Math.min(Math.round(centerY + offsetY), centerY);
+          context.fillStyle = "black";
+          context.beginPath();
+          context.arc(startX, posY, dotRadius, 0, 2*Math.PI, false);
+          context.fill();
+
+          var letter = text[idxDot];
+          var w = context.measureText(letter);
+          var o = startX - w.width / 2.0;
+          context.fillStyle = "white";
+          context.fillText(letter, o, posY + 7);
+
+          startX += dotRadius * 2 + border;
+          angleDeg += (360 / numDots);
+          angleDeg %= 360;
+        }
+
+        ++frame;
+
+        window.requestAnimationFrame(splashStep);
+      }
+
       function step(timestamp) {
         var progress = timestamp - last;
         last = timestamp;
@@ -335,7 +442,7 @@
       canvas.addEventListener('click', handleMouseClick, false);
       canvas.addEventListener('mousemove', handleMouseMove, false);
 
-      window.requestAnimationFrame(step);
+      window.requestAnimationFrame(dropperStep);
     </script>
   </body>
 </html>
