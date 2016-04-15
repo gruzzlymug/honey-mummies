@@ -10,5 +10,5 @@ io.on('connection', function(socket) {
 });
 
 http.listen(61337, function() {
-    console.log('listening on *:61337.');
+  console.log('listening on *:61337.');
 });
