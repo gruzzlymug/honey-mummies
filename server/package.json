@@ -4,6 +4,7 @@
   "description": "honey mummies server",
   "dependencies": {
     "express": "^4.10.2",
+    "rethinkdbdash": "^2.2.20",
     "socket.io": "^1.4.5"
   }
 }
