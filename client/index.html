@@ -6,6 +6,7 @@
     <script src="js/grid.js"></script>
     <script src="js/boid.js"></script>
     <script src="js/lib/jquery/2.2.0/jquery.min.js"></script>
+    <script src="js/lib/sha1.js"></script>
     <script src="js/lib/state-machine.js"></script>
     <script src="/socket.io/socket.io.js"></script>
     <link rel="stylesheet" type="text/css" href="/css/fsc.css">
@@ -245,7 +246,7 @@
               context.fill();
 
               context.fillStyle = "lightskyblue";
-              uiText = user.Hello;
+              uiText = user.username;
             } else {
               if (uiText.length < 4) {
                 context.fillStyle = "gold";
@@ -332,6 +333,11 @@
           socket.emit('select', boidID);
         }
 
+        // TODO fix - hack to dismiss splash screen
+        if (frame < 60 * 10) {
+          frame = 60 * 10;
+        }
+
         // debug mode
         if (mouseY >= e.target.height - 40) {
           f.toggleDebug();
@@ -364,18 +370,19 @@
 
       function submitCredentials(username, password) {
         // pretend log in...shhhh!
-        var p1 = new Promise(function(resolve, reject) {
-          window.setTimeout(function() { resolve(13); }, 500);
-        });
-        p1.then(function(val) { user = { "Hello": username } });
+        // var p1 = new Promise(function(resolve, reject) {
+        //   window.setTimeout(function() { resolve(13); }, 500);
+        // });
+        // p1.then(function(val) { user = { "Hello": username } });
 
-        if (false) {
+        if (true) {
           var data = {
-            "name": username
+            "username": username,
+            "password": Sha1.hash(password)
           };
 
           $.ajax({
-            url: "https://shjsc38xsl.execute-api.us-west-2.amazonaws.com/prod/honeymummiesresource",
+            url: "/node/session",
             type: "POST",
             crossDomain: true,
             contentType: 'application/json',
@@ -413,6 +420,9 @@
           console.log('got boid message: ' + boidID);
           f.selectBoid(boidID);
         });
+        socket.on('login', function(username) {
+          console.log(username + ' joined');
+        })
       }
 
       var mouseX = 0;
