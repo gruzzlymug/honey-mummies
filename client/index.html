@@ -349,6 +349,7 @@
           if (user) {
             // if (mouseY <= 40 && mouseX >= e.target.offsetWidth - 40) {
             if (mouseY <= 40 && mouseX >= 4*16+8 && mouseX < 7*16+8) {
+              signOut();
               user = null;
               menuFsm.hide();
               return;
@@ -375,31 +376,39 @@
         // });
         // p1.then(function(val) { user = { "Hello": username } });
 
-        if (true) {
-          var data = {
-            "username": username,
-            "password": Sha1.hash(password)
-          };
+        var data = {
+          username: username,
+          password: Sha1.hash(password)
+        };
 
-          $.ajax({
-            url: "/node/session",
-            type: "POST",
-            crossDomain: true,
-            contentType: 'application/json',
-            data: JSON.stringify(data),
-            dataType: 'json',
-            success: function(data) {
-              console.log('SUCCESS:' + data);
-              user = data;
-              uiText = "";
-            },
-            error: function(xhr, ajaxOptions, thrownError) {
-              console.log('ERROR: Invalid credentials');
-              user = null;
-              uiText = "";
-            }
-          });
-        }
+        $.ajax({
+          url: "/node/session",
+          type: "POST",
+          crossDomain: true,
+          contentType: 'application/json',
+          data: JSON.stringify(data),
+          dataType: 'json',
+          success: function(data) {
+            console.log('SUCCESS:' + data);
+            user = data;
+            uiText = "";
+          },
+          error: function(xhr, ajaxOptions, thrownError) {
+            console.log('ERROR: Invalid credentials');
+            user = null;
+            uiText = "";
+          }
+        });
+      }
+
+      function signOut() {
+        $.ajax({
+          url: "/node/session",
+          type: "DELETE",
+          success: function(data) {
+            console.log("signed out");
+          }
+        })
       }
 
       var menuFsm = StateMachine.create({
