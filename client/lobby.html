@@ -1,0 +1,179 @@
+<html>
+  <head>
+    <title>Sploosh</title>
+    <script src="js/lib/jquery/2.2.0/jquery.min.js"></script>
+    <script src="js/lib/sha1.js"></script>
+    <script src="js/lib/state-machine.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="js/screen.js"></script>
+    <link rel="stylesheet" type="text/css" href="/css/fsc.css">
+  </head>
+  <body>
+    <canvas id="field" tabindex="1" width="500" height="500" style="outline:none"></canvas>
+    <script>
+      $(function() {
+        window.canvas = document.getElementById('field');
+        window.context = canvas.getContext('2d');
+
+        window.uiText = "Connecting...";
+        window.players = [];
+
+        getLobbies();
+
+        window.socket = io();
+        console.log('created socket');
+        socket.on('boid', function(boidID) {
+          console.log('got boid message: ' + boidID);
+          f.selectBoid(boidID);
+        });
+        socket.on('login', function(player) {
+          console.log(player.username + ' joined');
+        })
+
+        canvas.addEventListener('keydown', handleKeyDown, false);
+        canvas.addEventListener('click', handleMouseClick, false);
+
+        window.requestAnimationFrame(screenStep);
+      });
+
+      // http://stackoverflow.com/questions/8932745/how-to-override-backspace-key-function-in-document-as-in-google
+      $(document).keydown(function(e) {
+        console.log('keydown');
+        if (e.which === 8) {
+          return false;
+        }
+      })
+    </script>
+    <script>
+      // only one lobby for now
+      function getLobbies() {
+        $.ajax({
+          url: "/node/lobby",
+          type: "GET",
+          success: function(data) {
+            window.lobby = data[0];
+            uiText = lobby.server;
+            console.log("set lobby");
+          }
+        });
+      }
+
+      // click handler
+      function handleMouseClick(e) {
+        handleClickEvent(e);
+      }
+
+      function handleKeyDown(e) {
+        console.log('handleKeyDown');
+        var key = e.keyCode;
+        if (key == 8) {
+          console.log("<backspace")
+        }
+      }
+
+      function handleClickEvent(e) {
+        var numButtons = buttons.length;
+        for (var idxBtn = 0; idxBtn < numButtons; ++idxBtn) {
+          var x = buttons[idxBtn].x;
+          var y = buttons[idxBtn].y;
+          var r = buttons[idxBtn].radius;
+          var left = x - r;
+          var right = x + r;
+          var top = y - r;
+          var bottom = y + r;
+
+          if (e.clientX > left && e.clientX < right && e.clientY > top && e.clientY < bottom) {
+            signIn(buttons[idxBtn].user, buttons[idxBtn].pw);
+          }
+        }
+      }
+
+      function signIn(username, password) {
+        var data = {
+          username: username,
+          password: Sha1.hash(password)
+        };
+
+        $.ajax({
+          url: "/node/session",
+          type: "POST",
+          crossDomain: true,
+          contentType: 'application/json',
+          data: JSON.stringify(data),
+          dataType: 'json',
+          success: function(data) {
+            // console.log('SUCCESS:' + JSON.stringify(data, null, 2));
+            console.log("authenticated (" + username + ")");
+            window.user = data;
+          },
+          error: function(xhr, ajaxOptions, thrownError) {
+            console.log('ERROR: Invalid credentials');
+            window.user = null;
+            uiText = "ERROR";
+          }
+        });
+      }
+
+      var btnTest = {
+        user: 'TEST',
+        pw: 'TEST',
+        x: 200,
+        y: 20,
+        radius: 10
+      };
+
+      var btnFork = {
+        user: 'FORK',
+        pw: 'FORK',
+        x: 200,
+        y: 50,
+        radius: 10,
+      };
+
+      buttons = [btnTest, btnFork];
+
+      function drawButton(btn) {
+        context.beginPath();
+        context.strokeStyle = "orange";
+        context.fillStyle = "yellow";
+        // context.arc(btn.x, btn.y, btn.r, 0, 2*Math.PI, false);
+        context.arc(btn.x, btn.y, btn.radius, 0, 2*Math.PI, false);
+        context.fill();
+        context.stroke();
+        context.closePath();
+
+        context.font = '7pt Helvetica';
+        var w = context.measureText(btn.user);
+        var o = btn.x - w.width / 2.0;
+        context.beginPath();
+        context.fillStyle = "black";
+        context.fillText(btn.user, o, btn.y + 3);
+        context.closePath();
+      }
+
+      function drawText(text, x, y) {
+        context.font = '14pt Helvetica';
+
+        context.beginPath();
+        context.fillStyle = "black";
+        context.fillText(text, x, y);
+        context.closePath();
+      }
+
+      function screenStep(timestamp) {
+        context.fillStyle = "lightgray";
+        context.fillRect(0, 0, canvas.width, canvas.height);
+
+        drawText(uiText, 10, 20);
+        buttons.forEach(drawButton);
+
+        if (window.lobby) {
+          for (var idxPlayer = 0; idxPlayer < lobby.players.length; ++idxPlayer) {
+            drawText(lobby.players[idxPlayer].username, 10, 40 + idxPlayer * 20);
+          }
+        }
+        window.requestAnimationFrame(screenStep);
+      }
+    </script>
+  </body>
+</html>

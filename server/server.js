@@ -11,14 +11,48 @@ var currentLobby = null;
 
 app.use(parser.json());
 
+app.route('/lobby')
+  .get(function(req, res) {
+    var lobbies = [];
+    r.table('lobbies')
+    .run(function(err, cursor) {
+      if (err) throw err;
+      if (cursor.length > 0) {
+        console.log("GET lobby");
+        lobbies = cursor;
+        res.json(lobbies);
+      }
+    });
+  });
+
+app.route('/lobby/:id')
+  .get(function(req, res) {
+    var id = req.params.id;
+    var lobby = {};
+    r.table('lobbies').filter(r.row("id").eq(id))
+    .run(function(err, cursor) {
+      if (err) throw err;
+      if (cursor.length > 0) {
+        lobby = cursor[0];
+        console.log("used ID");
+        res.json(lobby);
+      }
+    });
+  });
+
+app.route('/player')
+  .get(function(req, res) {
+
+  });
+
 app.route('/session')
   .get(function(req, res) {
     console.log("get a session");
     res.json({ message: 'get a session' });
   })
   .post(function(req, res) {
-    console.log("add a session");
-    console.log(req.body);
+    // console.log("add a session");
+    // console.log(req.body);
     var username = req.body.username;
     var password = req.body.password;
 
@@ -32,11 +66,11 @@ app.route('/session')
           password: password
         }).run();
       } else {
-        console.log("Found " + username);
+        // console.log("Found " + username);
         if (cursor[0].password == password) {
-          console.log("Authenticated");
+          console.log("Authenticated " + username);
           // sessionStorage.setItem('username', username);
-          io.emit('login', username);
+          io.emit('login', {id: cursor[0].id, username: username});
           if (currentLobby) {
             // NOTE no db?
             r.table('lobbies').filter(r.row("id").eq(currentLobby))
@@ -48,7 +82,8 @@ app.route('/session')
             })
             .run(function(err, result) {
               if (err) throw err;
-              console.log(JSON.stringify(result, null, 2));
+              console.log("Added " + username + " to lobby");
+              // console.log(JSON.stringify(result, null, 2));
             });
           }
         } else {
@@ -58,7 +93,7 @@ app.route('/session')
     });
 
     res.json({
-      message: 'add a session',
+      lobby: currentLobby,
       username: username,
     });
   })
@@ -69,12 +104,6 @@ app.route('/session')
   .delete(function(req, res) {
     console.log("delete a session");
     res.json({ message: 'signed out'});
-  });
-
-app.route('/lobby/:id')
-  .get(function(req, res) {
-    var id = req.params.id;
-    console.log("ID is " + id);
   });
 
 io.on('connection', function(socket) {
@@ -109,5 +138,14 @@ http.listen(61337, function() {
         console.log("Lobby ID = " + currentLobby);
       });
     }
+    // clear out any existing players
+    r.table('lobbies').filter(r.row("id").eq(currentLobby))
+    .update({players: []})
+    .run(function(err, result) {
+      if (err) throw err;
+      // console.log("->" + JSON.stringify(result, null, 2));
+      console.log("Purged players");
+      // console.log("# players: " + lobby.players)
+    });
   });
 });

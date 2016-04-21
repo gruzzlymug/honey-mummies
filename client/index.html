@@ -389,7 +389,7 @@
           data: JSON.stringify(data),
           dataType: 'json',
           success: function(data) {
-            console.log('SUCCESS:' + data);
+            console.log('SUCCESS:' + JSON.stringify(data, null, 2));
             user = data;
             uiText = "";
           },
@@ -408,7 +408,7 @@
           success: function(data) {
             console.log("signed out");
           }
-        })
+        });
       }
 
       var menuFsm = StateMachine.create({
