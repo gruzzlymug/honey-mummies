@@ -7,6 +7,7 @@ var os = require('os');
 var io = require('socket.io')(http);
 var r = require('rethinkdbdash')();
 
+var players = [];
 var currentLobby = null;
 
 app.use(parser.json());
@@ -45,16 +46,21 @@ app.route('/player')
 
   });
 
+app.route('/purge')
+  .post(function(req, res) {
+    purgePlayers();
+    res.json({status: 'OK'})
+  });
+
 app.route('/session')
   .get(function(req, res) {
     console.log("get a session");
     res.json({ message: 'get a session' });
   })
   .post(function(req, res) {
-    // console.log("add a session");
-    // console.log(req.body);
     var username = req.body.username;
     var password = req.body.password;
+    var sessionID = "default";
 
     r.table('authors')
     .filter(r.row('username').eq(username))
@@ -66,43 +72,58 @@ app.route('/session')
           password: password
         }).run();
       } else {
-        // console.log("Found " + username);
-        if (cursor[0].password == password) {
+        if (cursor[0].password == password && players.indexOf(username) < 0) {
           console.log("Authenticated " + username);
-          // sessionStorage.setItem('username', username);
+
+          r.table('sessions').insert({
+            userID: cursor[0].id,
+            username: username,
+            createdAt: new Date()
+          }).run(function(err, result) {
+            sessionID = result.generated_keys[0];
+            console.log("FIX " + sessionID);
+          });
+
           io.emit('login', {id: cursor[0].id, username: username});
-          if (currentLobby) {
-            // NOTE no db?
-            r.table('lobbies').filter(r.row("id").eq(currentLobby))
-            .update({players: r.row("players")
-              .append({
-                id: cursor[0].id,
-                username: username
-              })
+          // NOTE no db?
+          r.table('lobbies').filter(r.row("id").eq(currentLobby))
+          .update({players: r.row("players")
+            .append({
+              id: cursor[0].id,
+              username: username
             })
-            .run(function(err, result) {
-              if (err) throw err;
-              console.log("Added " + username + " to lobby");
-              // console.log(JSON.stringify(result, null, 2));
-            });
-          }
+          })
+          .run(function(err, result) {
+            if (err) throw err;
+            console.log("Added " + username + " to lobby");
+          });
+          players.push(username);
         } else {
           console.log("INTRUDER ALERT");
         }
       }
     });
 
+    console.log(sessionID);
     res.json({
-      lobby: currentLobby,
+      sessionID: sessionID,
       username: username,
     });
   })
   .put(function(req, res) {
     console.log("update a session");
     res.json({ message: 'update a session' });
-  })
+  });
+
+app.route('/session/:id')
   .delete(function(req, res) {
-    console.log("delete a session");
+    console.log("Delete session " + req.params.id);
+    r.table("sessions").filter(r.row("id").eq(req.params.id))
+      .delete()
+      .run(function(err, result) {
+        if (err) throw err;
+        console.log("  Success");
+      });
     res.json({ message: 'signed out'});
   });
 
@@ -123,29 +144,38 @@ http.listen(61337, function() {
     if (err) throw err;
     if (cursor.length > 0) {
       var lobbyID = cursor[0].id;
-      console.log("Found Lobby: " + serverName + " (" + lobbyID + ")");
+      console.log("Found Lobby");
+      console.log("  Name: " + serverName);
+      console.log("  ID:   " + lobbyID);
       currentLobby = lobbyID;
+      purgePlayers();
     } else {
       r.table('lobbies').insert({
         server: serverName,
         address: ip,
-        created: 'DATE',
+        created: new Date(),
         players: []
       }).run(function(err, result) {
         if (err) throw err;
-        console.log(JSON.stringify(result, null, 2));
         currentLobby = result.generated_keys[0];
         console.log("Lobby ID = " + currentLobby);
       });
     }
-    // clear out any existing players
-    r.table('lobbies').filter(r.row("id").eq(currentLobby))
-    .update({players: []})
-    .run(function(err, result) {
-      if (err) throw err;
-      // console.log("->" + JSON.stringify(result, null, 2));
-      console.log("Purged players");
-      // console.log("# players: " + lobby.players)
-    });
   });
 });
+
+function addPlayer() {
+
+}
+
+function purgePlayers() {
+  // memory
+  players = [];
+  // db
+  r.table('lobbies').filter(r.row("id").eq(currentLobby))
+  .update({players: []})
+  .run(function(err, result) {
+    if (err) throw err;
+    console.log("Purged players");
+  });
+}
