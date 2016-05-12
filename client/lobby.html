@@ -16,7 +16,7 @@
         window.context = canvas.getContext('2d');
 
         window.uiText = "Connecting...";
-        window.players = [];
+        // window.players = []; // aka lobby.players
 
         getLobbies();
 
@@ -34,6 +34,15 @@
             }
           }
           lobby.players.push(player);
+        })
+        socket.on('logout', function (player) {
+          console.log(JSON.stringify(player) + ' left')
+          for (var idxPlayer = 0; idxPlayer < lobby.players.length; ++idxPlayer) {
+            if (lobby.players[idxPlayer].id == player.id) {
+              lobby.players.splice(idxPlayer, 1)
+              return;
+            }
+          }
         })
 
         canvas.addEventListener('keydown', handleKeyDown, false);
@@ -124,7 +133,7 @@
           url: "/node/session/" + window.user.sessionID,
           type: "DELETE",
           success: function(data) {
-            console.log("Signed out " + window.user.sessionID);
+            console.log("Signed out " + window.user.username + " (session " + window.user.sessionID + ")");
             window.user = null;
           },
           error: null

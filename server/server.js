@@ -1,3 +1,6 @@
+//
+// nodemon -L server.js
+//
 // framework
 var app = require('express')();
 var http = require('http').Server(app);
@@ -6,6 +9,9 @@ var parser = require('body-parser');
 var os = require('os');
 var io = require('socket.io')(http);
 var r = require('rethinkdbdash')();
+
+var Promise = require('bluebird')
+var unused = Promise.promisifyAll(require('rethinkdbdash')());
 
 var players = [];
 var currentLobby = null;
@@ -44,7 +50,22 @@ app.route('/lobby/:id')
 app.route('/player')
   .get(function(req, res) {
 
-  });
+  })
+  .post(function (req, res) {
+    // create new player account here
+    // var data = {
+    //   username: username,
+    //   password: password
+    // }
+    // var query = r.table('authors').insert(data)
+    // query.runAsync().then(function (result) {
+    //   query = r.table('authors').filter(r.row('username').eq(username))
+    //   query.runAsync().then(function (data) {
+    //     console.log("NEW " + JSON.stringify(data[0]))
+    //     return Promise.resolve(data[0])
+    //   })
+    // });
+  })
 
 app.route('/purge')
   .post(function(req, res) {
@@ -54,61 +75,50 @@ app.route('/purge')
 
 app.route('/session')
   .get(function(req, res) {
-    console.log("get a session");
-    res.json({ message: 'get a session' });
+    console.log("get a list of sessions");
+    res.json({ message: 'get a list of sessions' });
   })
   .post(function(req, res) {
     var username = req.body.username;
     var password = req.body.password;
     var sessionID = "default";
 
-    r.table('authors')
-    .filter(r.row('username').eq(username))
-    .run(function(err, cursor) {
-      if (cursor.length == 0) {
-        console.log("Adding " + username);
-        r.table('authors').insert({
-          username: username,
-          password: password
-        }).run();
-      } else {
-        if (cursor[0].password == password && players.indexOf(username) < 0) {
+    var query = r.table('authors')
+      .filter(r.row('username').eq(username))
+      .filter(r.row('password').eq(password))
+    query.runAsync()
+      .then(function(cursor) {
+        if (cursor.length > 0 && players.indexOf(username) < 0) {
           console.log("Authenticated " + username);
-
-          r.table('sessions').insert({
-            userID: cursor[0].id,
-            username: username,
-            createdAt: new Date()
-          }).run(function(err, result) {
-            sessionID = result.generated_keys[0];
-            console.log("FIX " + sessionID);
-          });
-
-          io.emit('login', {id: cursor[0].id, username: username});
-          // NOTE no db?
-          r.table('lobbies').filter(r.row("id").eq(currentLobby))
-          .update({players: r.row("players")
-            .append({
-              id: cursor[0].id,
-              username: username
-            })
-          })
-          .run(function(err, result) {
-            if (err) throw err;
-            console.log("Added " + username + " to lobby");
-          });
           players.push(username);
+          return Promise.resolve(cursor[0])
         } else {
+          // TODO add failed login handler
           console.log("INTRUDER ALERT");
         }
-      }
-    });
+      })
+      .then(function (user) {
+        // echo login to clients
+        // TODO move to after session creation
+        io.emit('login', {id: user.id, username: username});
 
-    console.log(sessionID);
-    res.json({
-      sessionID: sessionID,
-      username: username,
-    });
+        // create new session
+        var data = {
+          userID: user.id,
+          username: user.name,
+          createdAt: new Date()
+        }
+        var query = r.table('sessions').insert(data)
+        return query.runAsync()
+      })
+      .then(function(result) {
+        sessionID = result.generated_keys[0];
+        var sessionData = {
+          sessionID: sessionID,
+          username: username
+        }
+        return res.json(sessionData)
+      })
   })
   .put(function(req, res) {
     console.log("update a session");
@@ -117,14 +127,25 @@ app.route('/session')
 
 app.route('/session/:id')
   .delete(function(req, res) {
-    console.log("Delete session " + req.params.id);
-    r.table("sessions").filter(r.row("id").eq(req.params.id))
-      .delete()
-      .run(function(err, result) {
-        if (err) throw err;
+    var sessionID = req.params.id
+    console.log("Delete session " + sessionID)
+    var query = r.table("sessions").filter(r.row("id").eq(sessionID))
+    query.runAsync()
+      .then(function(cursor) {
+        if (cursor.length > 0) {
+          console.log('cursor: ' + JSON.stringify(cursor))
+          var session = cursor[0]
+          io.emit('logout', {id: session.userID})
+        } else {
+          // TODO handle no session found
+        }
+      })
+    query.delete().runAsync()
+      .then(function (result) {
+        // TODO check num deleted == 1
         console.log("  Success");
-      });
-    res.json({ message: 'signed out'});
+        res.json({ message: 'signed out'});
+      })
   });
 
 io.on('connection', function(socket) {
@@ -164,8 +185,22 @@ http.listen(61337, function() {
   });
 });
 
-function addPlayer() {
+function handleSignIn(username, password, cursor, err) {
+  // TODO move this to Promise land
+  r.table('lobbies').filter(r.row("id").eq(currentLobby))
+  .update({players: r.row("players")
+    .append({
+      id: cursor[0].id,
+      username: username
+    })
+  })
+  .run(function(err, result) {
+    if (err) throw err;
+    console.log("Added " + username + " to lobby");
+  });
+}
 
+function addPlayer() {
 }
 
 function purgePlayers() {
