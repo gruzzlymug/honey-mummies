@@ -12,3 +12,5 @@
 #### Server
 
 * NodeJS
+* NGINX
+* RethinkDB

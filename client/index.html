@@ -6,14 +6,10 @@
     <script src="js/grid.js"></script>
     <script src="js/boid.js"></script>
     <script src="js/lib/jquery/2.2.0/jquery.min.js"></script>
+    <script src="js/lib/sha1.js"></script>
     <script src="js/lib/state-machine.js"></script>
     <script src="/socket.io/socket.io.js"></script>
-    <style>
-      body {
-        margin: 0px;
-        padding: 0px;
-      }
-    </style>
+    <link rel="stylesheet" type="text/css" href="/css/fsc.css">
   </head>
   <body>
     <canvas id="field" tabindex="1" width="500" height="500" style="outline:none"></canvas>
@@ -82,7 +78,11 @@
 
         ++frame;
 
-        window.requestAnimationFrame(dropperStep);
+        if (frame < 60 * 10) {
+          window.requestAnimationFrame(dropperStep);
+        } else {
+          window.requestAnimationFrame(step);
+        }
       }
 
       function drawBall(letter, x, y, dotRadius) {
@@ -246,7 +246,7 @@
               context.fill();
 
               context.fillStyle = "lightskyblue";
-              uiText = user.Hello;
+              uiText = user.username;
             } else {
               if (uiText.length < 4) {
                 context.fillStyle = "gold";
@@ -333,6 +333,11 @@
           socket.emit('select', boidID);
         }
 
+        // TODO fix - hack to dismiss splash screen
+        if (frame < 60 * 10) {
+          frame = 60 * 10;
+        }
+
         // debug mode
         if (mouseY >= e.target.height - 40) {
           f.toggleDebug();
@@ -344,6 +349,7 @@
           if (user) {
             // if (mouseY <= 40 && mouseX >= e.target.offsetWidth - 40) {
             if (mouseY <= 40 && mouseX >= 4*16+8 && mouseX < 7*16+8) {
+              signOut();
               user = null;
               menuFsm.hide();
               return;
@@ -365,35 +371,44 @@
 
       function submitCredentials(username, password) {
         // pretend log in...shhhh!
-        var p1 = new Promise(function(resolve, reject) {
-          window.setTimeout(function() { resolve(13); }, 500);
+        // var p1 = new Promise(function(resolve, reject) {
+        //   window.setTimeout(function() { resolve(13); }, 500);
+        // });
+        // p1.then(function(val) { user = { "Hello": username } });
+
+        var data = {
+          username: username,
+          password: Sha1.hash(password)
+        };
+
+        $.ajax({
+          url: "/node/session",
+          type: "POST",
+          crossDomain: true,
+          contentType: 'application/json',
+          data: JSON.stringify(data),
+          dataType: 'json',
+          success: function(data) {
+            console.log('SUCCESS:' + JSON.stringify(data, null, 2));
+            user = data;
+            uiText = "";
+          },
+          error: function(xhr, ajaxOptions, thrownError) {
+            console.log('ERROR: Invalid credentials');
+            user = null;
+            uiText = "";
+          }
         });
-        p1.then(function(val) { user = { "Hello": username } });
+      }
 
-        if (false) {
-          var data = {
-            "name": username
-          };
-
-          $.ajax({
-            url: "https://shjsc38xsl.execute-api.us-west-2.amazonaws.com/prod/honeymummiesresource",
-            type: "POST",
-            crossDomain: true,
-            contentType: 'application/json',
-            data: JSON.stringify(data),
-            dataType: 'json',
-            success: function(data) {
-              console.log('SUCCESS:' + data);
-              user = data;
-              uiText = "";
-            },
-            error: function(xhr, ajaxOptions, thrownError) {
-              console.log('ERROR: Invalid credentials');
-              user = null;
-              uiText = "";
-            }
-          });
-        }
+      function signOut() {
+        $.ajax({
+          url: "/node/session",
+          type: "DELETE",
+          success: function(data) {
+            console.log("signed out");
+          }
+        });
       }
 
       var menuFsm = StateMachine.create({
@@ -414,6 +429,9 @@
           console.log('got boid message: ' + boidID);
           f.selectBoid(boidID);
         });
+        socket.on('login', function(username) {
+          console.log(username + ' joined');
+        })
       }
 
       var mouseX = 0;
