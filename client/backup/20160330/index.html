@@ -3,9 +3,9 @@
 <html>
   <head>
     <title>honeymummies</title>
+    <script src="https://cdn.jsdelivr.net/benchmarkjs/2.1.0/benchmark.js"></script>
+    <script src="https://cdn.jsdelivr.net/lodash/4.6.1/lodash.js"></script>
     <script src="js/boid.js"></script>
-    <script src="js/lib/lodash/4.6.1/lodash.js"></script>
-    <script src="js/lib/benchmark/2.1.0/benchmark.js"></script>
     <script src="js/lib/jquery/2.2.0/jquery.min.js"></script>
     <script src="js/lib/state-machine.js"></script>
     <style>
@@ -306,10 +306,10 @@
       canvas.addEventListener('click', handleMouseClick, false);
       canvas.addEventListener('mousemove', handleMouseMove, false);
 
-      var bm = new Benchmark('stepper', step, {'async': true});
-      bm.on('cycle', function(event) {
-          console.log(String(event.target));
-        })
+      // var bm = new Benchmark('stepper', step, {'async': true});
+      // bm.on('cycle', function(event) {
+      //     console.log(String(event.target));
+      //   })
       //bm.run({ 'async': true });
       // Benchmark.runInContext(context);
 
