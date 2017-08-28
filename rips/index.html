@@ -1,0 +1,75 @@
+<!DOCTYPE HTML>
+<html>
+  <head>
+    <title>RIPS - RIot Police Simulator</title>
+    <script src="https://cdn.jsdelivr.net/jquery/3.2.1/jquery.min.js"></script>
+    <script src="js/grid.js"></script>
+    <script src="js/boid.js"></script>
+    <link rel="stylesheet" type="text/css" href="/css/fsc.css">
+  </head>
+  <body>
+    <canvas id="field" tabindex="1" width="500" height="500" style="outline:none"></canvas>
+    <script>
+      // TODO improve usage. required by boid.js
+      function randomInRange(min, max, wantInt) {
+        var max = (max === 0 || max) ? max : 1,
+            min = min || 0,
+            gen = min + (max - min) * Math.random();
+
+        return (wantInt) ? Math.round(gen) : gen;
+      }
+
+      function step(timestamp) {
+        var progress = timestamp - last;
+        last = timestamp;
+        var dt = progress / 100;
+
+        // frames per second
+        elapsedTime = (timestamp - startTime) / 1000,
+        result = Math.floor((frame / elapsedTime));
+        if (elapsedTime > 1) {
+          startTime = timestamp;
+          frame = 0;
+        }
+
+        if (frame % 10 == 0) {
+          fpsText = result.toString();
+        }
+
+        context.fillStyle = "black";
+        context.fillRect(0, 0, canvas.width, canvas.height);
+
+        f.update(dt);
+        // f.cull();
+        f.move(context);
+        f.draw(context);
+
+        // drawUI(context);
+
+        ++frame;
+
+        window.requestAnimationFrame(step);
+      }
+
+      // -----------------------------------------------------------------------
+      var canvas = document.getElementById('field');
+      var context = canvas.getContext('2d');
+      var last = performance.now();
+      var startTime = last;
+      var frame = 0;
+
+      context.canvas.width = window.innerWidth;
+      context.canvas.height = window.innerHeight;
+
+      var ccw = context.canvas.width;
+      var cch = context.canvas.height;
+
+      var g = new Grid(ccw, cch, 75);
+      var f = new Flock(g);
+      f.createBoids(60);
+      f.createSource(ccw / 2, cch / 2);
+
+      window.requestAnimationFrame(step);
+    </script>
+  </body>
+</html>
