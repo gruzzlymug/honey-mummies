@@ -39,8 +39,14 @@
         context.fillStyle = "black";
         context.fillRect(0, 0, canvas.width, canvas.height);
 
-        f.update(dt);
-        // f.cull();
+        // TODO maybe put all of these into a single flock method
+        if (frame % 4 == 0) {
+          f.spawn(dt);
+        }
+        f.cull();
+        if (frame % 5 == 0) {
+          f.update(dt);
+        }
         f.move(context);
         f.draw(context);
 
@@ -66,7 +72,7 @@
 
       var g = new Grid(ccw, cch, 75);
       var f = new Flock(g);
-      f.createBoids(60);
+      f.createBoids(3);
       f.createSource(ccw / 2, cch / 2);
 
       window.requestAnimationFrame(step);

@@ -11,9 +11,7 @@
 * docker build --rm -t honey .
 * docker run --rm -p 80:80 honey
 
-* [The Edge](http://patorjk.com/software/taag/#p=display&f=The%20Edge&t=Boid) (Font)
-
-### 3rd party code
+### 3rd party code, etc
 
 #### Client
 
@@ -25,3 +23,7 @@
 * NodeJS
 * NGINX
 * RethinkDB
+
+#### Font
+
+* [The Edge](http://patorjk.com/software/taag/#p=display&f=The%20Edge&t=Boid)

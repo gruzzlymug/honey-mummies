@@ -195,13 +195,16 @@ Boid.prototype.update = function(dt) {
   if (isNaN(bv[0]) || isNaN(bv[1])) {
     var break_here = true;
   }
-  // if (this.id == 1) {
-  //  console.log(sv, cv, bv);
-  // }
+  if (this.id == 1 && Math.abs(av[0]) > 0.001 && Math.abs(av[1]) > 0.001) {
+    //  console.log(sv, cv, bv);
+     console.log(av);
+  }
 
+  // boid vel coefficient
+  let bvc = 1;
   var vm = [0, 0];
-  vm[0] = sf*sv[0] + cf*cv[0] + af*av[0] + gf*gv[0] + 0.8*bv[0];
-  vm[1] = sf*sv[1] + cf*cv[1] + af*av[1] + gf*gv[1] + 0.8*bv[1];
+  vm[0] = sf*sv[0] + cf*cv[0] + af*av[0] + gf*gv[0] + bvc*bv[0];
+  vm[1] = sf*sv[1] + cf*cv[1] + af*av[1] + gf*gv[1] + bvc*bv[1];
   // vm = normalize(vm);
 
   // vm[0] += bv[0];
@@ -215,7 +218,7 @@ Boid.prototype.update = function(dt) {
   var tlim = Boid.prototype.turns[this.id];
   var ts = Math.sign(tlim);
   tlim *= ts;
-  if (false && d < Boid.prototype.rotLimit * 1) { //tlim) {
+  if (d < Boid.prototype.rotLimit * 1) { //tlim) {
     // use the determinant to figure out which way vm points
     // this calculation is simplified due to use of the origin
     var determinant = bv[0]*vm[1] - bv[1]*vm[0];
@@ -242,7 +245,7 @@ Boid.prototype.update = function(dt) {
   }
   // never allow velocity to go to zero (prevents 'freeze' glitch)
   if (dot(vm, vm) < nearlyZero) {
-    // return;
+    return;
   }
   Boid.prototype.vel[this.id] = vm;
 }
@@ -381,6 +384,7 @@ Boid.prototype.draw = function(context) {
 //  █         ▀      ▀███▀    █
 //   ▀                       ▀
 //
+// TODO support multiple flocks
 Flock.prototype.numFlocks = 0;
 Flock.prototype.sources = [];
 Flock.prototype.sinks = [];
@@ -395,7 +399,6 @@ function Flock(grid) {
   this.boids = [];
   this.sources = [];
   this.sinks = [];
-  this.frame = 0;
   Flock.prototype.boids[this.id] = [];
 
   this.grid = grid;
@@ -426,31 +429,29 @@ Flock.prototype.selectBoid = function(boidID) {
   this.boids[boidID].select();
 }
 
-Flock.prototype.update = function(dt) {
+Flock.prototype.spawn = function(dt) {
   var numBoids = this.boids.length;
-  if (this.frame % 4 == 0) {
-    this.numActive = Math.min(numBoids, this.numActive)
-    if (this.numActive < this.numDesired) {
-      ++this.numActive;
-      if (this.numActive > numBoids) {
-        this.boids[numBoids] = createBoid();
-      } else {
-        // reuse existing boid
-      }
+  this.numActive = Math.min(numBoids, this.numActive)
+  if (this.numActive < this.numDesired) {
+    ++this.numActive;
+    if (this.numActive > numBoids) {
+      this.boids[numBoids] = createBoid();
+    } else {
+      // reuse existing boid
     }
   }
-
-  if (this.frame % 5 == 0) {
-    this.grid.add(Boid.prototype.pos);
-    this.grid.findNeighbors(neighborDist, maxNeighbors);
-
-    for (var idxBoid = 0; idxBoid < this.numActive; ++idxBoid) {
-      this.boids[idxBoid].update(dt);
-    }
-  }
-  ++this.frame;
 }
 
+Flock.prototype.update = function(dt) {
+  this.grid.add(Boid.prototype.pos);
+  this.grid.findNeighbors(neighborDist, maxNeighbors);
+
+  for (var idxBoid = 0; idxBoid < this.numActive; ++idxBoid) {
+    this.boids[idxBoid].update(dt);
+  }
+}
+
+// TODO add to flock?
 function createBoid() {
   var numSources = Flock.prototype.sources.length;
   var idxSource = randomInRange(0, numSources - 1, true);
@@ -463,7 +464,7 @@ function createBoid() {
   var v = [(Math.random() - 0.5), (Math.random() - 0.5)];
   v = normalize(v);
 
-  var hue = randomInRange(128, 255, 1);
+  var hue = randomInRange(64, 192, 1);
   return new Boid(p, v, hue);
 }
 
