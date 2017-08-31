@@ -2,37 +2,40 @@
 <html>
   <head>
     <title>R2</title>
+    <script src=""></script>
+    <script data-main="js/main" src="js/require.js"></script>
     <script src="js/grid.js"></script>
+    <script src="js/smu.js"></script>
     <script src="js/b2.js"></script>
     <link rel="stylesheet" type="text/css" href="/client/css/fsc.css">
   </head>
   <body>
     <canvas id="field" tabindex="1" width="500" height="500" style="outline:none"></canvas>
     <script>
-      function step(timestamp) {
-        context.fillStyle = "black";
-        context.fillRect(0, 0, canvas.width, canvas.height);
-
-        f.draw(context);
-
-        window.requestAnimationFrame(step);
-      }
-
-      //------------------------------------------------------------------------
-      let Boid = module.exports.Boid;
-      let Flock = module.exports.Flock;
-
-      var canvas = document.getElementById('field');
-      var context = canvas.getContext('2d');
-      var last = performance.now();
-      var startTime = last;
-      var frame = 0;
-
-      let g = new Grid(200, 200, 50);
-      let f = new Flock(g);
-      f.spawn(0);
-
-      window.requestAnimationFrame(step);
+      // function step(timestamp) {
+      //   context.fillStyle = "black";
+      //   context.fillRect(0, 0, canvas.width, canvas.height);
+      //
+      //   f.draw(context);
+      //
+      //   window.requestAnimationFrame(step);
+      // }
+      //
+      // //------------------------------------------------------------------------
+      // let Boid = module.exports.Boid;
+      // let Flock = module.exports.Flock;
+      //
+      // var canvas = document.getElementById('field');
+      // var context = canvas.getContext('2d');
+      // var last = performance.now();
+      // var startTime = last;
+      // var frame = 0;
+      //
+      // let g = new Grid(200, 200, 50);
+      // let f = new Flock(g);
+      // f.spawn(0);
+      //
+      // window.requestAnimationFrame(step);
     </script>
   </body>
 </html>
