@@ -1,6 +1,14 @@
+//
 // Simulation Math Utilities
+//
+if (module === undefined) {
+  var module = {};
+}
+
 module.exports = (function () {
-  function normalize(v) {
+  this.nearlyZero = 0.0001;
+
+  this.normalize = function (v) {
     let lv = Math.sqrt(v[0]*v[0] + v[1]*v[1]);
     if (Math.abs(lv) > nearlyZero) {
       v[0] /= lv;
@@ -37,10 +45,10 @@ module.exports = (function () {
   }
 
   return {
-    normalize,
-    dot,
-    buildRotationMatrix,
-    rotate,
-    randomInRange
+    // normalize: normalize,
+    dot: dot,
+    buildRotationMatrix: buildRotationMatrix,
+    rotate: rotate,
+    randomInRange: randomInRange
   };
 })();
