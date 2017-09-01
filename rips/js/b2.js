@@ -7,11 +7,13 @@ module.exports = (function () {
   Boid.prototype.numBoids = 0;
   Boid.prototype.pos = [];
   Boid.prototype.vel = [];
+  Boid.prototype.neighbors = [];
 
   function Boid(pos, vel) {
     this.id = Boid.prototype.numBoids++;
     Boid.prototype.pos[this.id] = pos;
     Boid.prototype.vel[this.id] = vel;
+    Boid.prototype.neighbors[this.id] = [];
   }
 
   Boid.prototype.constructor = Boid
@@ -55,6 +57,7 @@ module.exports = (function () {
   function Flock(grid) {
     this.grid = grid;
     this.numBoids = 0;
+    this.numActive = 0;
     this.boids = [];
     this.neighborDist = 50;
     this.maxNeighbors = 10;
@@ -76,6 +79,7 @@ module.exports = (function () {
     var numBoids = this.boids.length;
     this.boids[numBoids] = createBoid();
     ++this.numBoids;
+    ++this.numActive;
   }
 
   Flock.prototype.update = function(dt) {
@@ -84,6 +88,7 @@ module.exports = (function () {
 
     for (var idxBoid = 0; idxBoid < this.numActive; ++idxBoid) {
       this.boids[idxBoid].update(dt);
+      this.boids[idxBoid].move(dt);
     }
   }
 
