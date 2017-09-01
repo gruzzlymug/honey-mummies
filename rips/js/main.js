@@ -4,7 +4,6 @@ require(['smu', 'grid', 'b2'], function(u, p){
     context.fillRect(0, 0, canvas.width, canvas.height);
 
     f.update(timestamp);
-    f.move(timestamp);
     f.draw(context);
 
     window.requestAnimationFrame(step);
