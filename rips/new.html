@@ -2,69 +2,10 @@
 <html>
   <head>
     <title>R2</title>
-    <script src=""></script>
-    <!-- <script data-main="js/main" src="js/require.js"></script> -->
-    <script src="js/grid.js"></script>
-    <script src="js/smu.js"></script>
-    <script src="js/b2.js"></script>
     <link rel="stylesheet" type="text/css" href="/client/css/fsc.css">
   </head>
   <body>
     <canvas id="field" tabindex="1" width="500" height="500" style="outline:none"></canvas>
-    <script>
-      //--[ step ]--------------------------------------------------------------
-      function step(timestamp) {
-        // let frameTimeMs = timestamp - last;
-        // last = timestamp;
-        // console.log(frameTimeMs);
-
-        // frames per second
-        // elapsedTime = (timestamp - startTime) / 1000,
-        // result = Math.floor((frame / elapsedTime));
-        // if (elapsedTime > 1) {
-        //   startTime = timestamp;
-        //   frame = 0;
-        // }
-        // if (frame % 10 == 0) {
-        //   fpsText = result.toString();
-        //   console.log(fpsText);
-        // }
-        ++frame;
-
-        context.fillStyle = "black";
-        context.fillRect(0, 0, canvas.width, canvas.height);
-
-        if (frame % 3 === 0) {
-          f.update(timestamp);
-        }
-        f.spawn(0);
-        f.debugDraw(context);
-        f.draw(context);
-
-        window.requestAnimationFrame(step);
-      }
-
-      //------------------------------------------------------------------------
-      let Boid = module.exports.Boid;
-      let Flock = module.exports.Flock;
-
-      // var last = performance.now();
-      // var startTime = last;
-      var frame = 0;
-
-      let ww = window.innerWidth;
-      let wh = window.innerHeight;
-      var canvas = document.getElementById('field');
-      var context = canvas.getContext('2d');
-      context.canvas.width = ww;
-      context.canvas.height = wh;
-
-      let g = new Grid(ww, wh, 100);
-      let f = new Flock(g);
-      f.createBoids(100);
-      f.createSource(ww / 2, wh / 2);
-
-      window.requestAnimationFrame(step);
-    </script>
+    <script src="dist/index.min.js"></script>
   </body>
 </html>
