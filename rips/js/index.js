@@ -1,4 +1,3 @@
-require('./smu.js');
 // import Boid from './Boid'
 var Grid = require('./grid');
 var Flock = require('./flock.js');
