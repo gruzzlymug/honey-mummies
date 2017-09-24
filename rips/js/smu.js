@@ -1,12 +1,11 @@
 //
 // Simulation Math Utilities
 //
-if (module === undefined) {
-  var module = {};
-}
-
+// TODO FIX
+// TODO this is just throwing everything into the
+//      global namespace...
 module.exports = (function () {
-  this.nearlyZero = 0.0001;
+  this.nearlyZero = 0.00001;
 
   this.normalize = function (v) {
     let lv = Math.sqrt(v[0]*v[0] + v[1]*v[1]);

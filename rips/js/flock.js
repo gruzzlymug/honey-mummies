@@ -1,3 +1,4 @@
+require('./smu.js');
 var Boid = require('./Boid.js');
 
 module.exports = (function () {

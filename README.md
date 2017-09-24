@@ -24,6 +24,14 @@
 * NGINX
 * RethinkDB
 
+#### React
+
+To build JS
+
+`./node_modules/.bin/webpack`
+
+`./node_modules/.bin/babel --presets react --watch ./js --out-dir ./dist`
+
 #### Font
 
 * [The Edge](http://patorjk.com/software/taag/#p=display&f=The%20Edge&t=Boid)
