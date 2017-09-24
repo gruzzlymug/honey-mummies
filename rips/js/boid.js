@@ -119,9 +119,9 @@ module.exports = (function () {
     var y = Boid.prototype.pos[this.id][1];
 
     context.beginPath();
-    context.fillStyle = "blue";
+    context.fillStyle = "orange";
     if (this.id != 0) {
-      context.fillStyle = "yellow";
+      context.fillStyle = "lightyellow";
     }
     context.arc(x, y, 4, 0, 2*Math.PI, false);
     context.fill();

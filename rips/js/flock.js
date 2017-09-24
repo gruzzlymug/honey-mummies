@@ -1,7 +1,8 @@
 require('./smu.js');
+import { drawCircle } from './draw2d.js';
 var Boid = require('./Boid.js');
 
-module.exports = (function () {
+export default function () {
   Flock.prototype.sources = [];
 
   function Flock(grid) {
@@ -143,4 +144,4 @@ module.exports = (function () {
   }
 
   return Flock;
-})();
+}
