@@ -1,4 +1,4 @@
-module.exports = (function () {
+export default function () {
   Boid.prototype.numBoids = 0;
   Boid.prototype.pos = [];
   Boid.prototype.vel = [];
@@ -136,4 +136,4 @@ module.exports = (function () {
   }
 
   return Boid;
-})();
+}

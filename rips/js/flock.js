@@ -1,6 +1,8 @@
 require('./smu.js');
 import { drawCircle } from './draw2d.js';
-var Boid = require('./Boid.js');
+import BoidFunction from './Boid.js';
+
+const Boid = BoidFunction();
 
 export default function () {
   Flock.prototype.sources = [];

@@ -1,8 +1,9 @@
 // import Boid from './Boid'
-var Grid = require('./grid')();
+import GridFunction from './grid';
 import FlockFunction from './flock.js';
 import Mildo from './mildo';
 
+const Grid = GridFunction();
 const Flock = FlockFunction();
 
 //--[ step ]--------------------------------------------------------------

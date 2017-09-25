@@ -1,6 +1,8 @@
-var Boid = require('./Boid.js');
+import BoidFunction from './Boid.js';
 
-module.exports = (function () {
+const Boid = BoidFunction();
+
+export default function () {
   // move to reset fn?
   Grid.prototype.width = 0;
   Grid.prototype.height = 0;
@@ -128,4 +130,4 @@ module.exports = (function () {
   }
 
   return Grid;
-})
+}
