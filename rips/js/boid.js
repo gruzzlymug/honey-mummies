@@ -1,3 +1,5 @@
+import { drawCircle, drawDot } from './draw2d';
+
 export default function () {
   Boid.prototype.numBoids = 0;
   Boid.prototype.pos = [];
@@ -118,13 +120,9 @@ export default function () {
     var x = Boid.prototype.pos[this.id][0];
     var y = Boid.prototype.pos[this.id][1];
 
-    context.beginPath();
-    context.fillStyle = "orange";
-    if (this.id != 0) {
-      context.fillStyle = "lightyellow";
-    }
-    context.arc(x, y, 4, 0, 2*Math.PI, false);
-    context.fill();
+    let radius = 4;
+    // drawDot(context, x, y, radius, "white")
+    drawCircle(context, x, y, radius, "red", 0.5);
   }
 
   function sayIt() {
