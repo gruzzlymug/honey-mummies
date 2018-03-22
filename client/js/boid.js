@@ -130,7 +130,7 @@ Boid.prototype.cohere = function() {
 
     cv[0] = goal[0] - Boid.prototype.pos[this.id][0];
     cv[1] = goal[1] - Boid.prototype.pos[this.id][1];
-    var cv = normalize(cv);
+    cv = normalize(cv);
   }
 
   return cv;
