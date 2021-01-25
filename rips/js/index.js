@@ -1,9 +1,17 @@
 // import Boid from './Boid'
-var Grid = require('./grid');
-var Flock = require('./flock.js');
+import GridFunction from './grid';
+import FlockFunction from './flock.js';
 import Mildo from './mildo';
 
+const Grid = GridFunction();
+const Flock = FlockFunction();
+
+var flocks = [];
+
 //--[ step ]--------------------------------------------------------------
+// globals
+// - flocks
+// - ?
 function step(timestamp) {
   let frameTimeMs = timestamp - last;
   last = timestamp;
@@ -26,11 +34,19 @@ function step(timestamp) {
   context.fillRect(0, 0, canvas.width, canvas.height);
 
   if (frame % 3 === 0) {
-    f.update(timestamp);
+    for (var i = 0, len = flocks.length; i < len; ++i) {
+      flocks[i].update(timestamp);
+    }
   }
-  f.spawn(0);
-  f.debugDraw(context);
-  f.draw(context);
+  for (var i = 0, len = flocks.length; i < len; ++i) {
+    flocks[i].spawn(0);
+  }
+  for (var i = 0, len = flocks.length; i < len; ++i) {
+    flocks[i].debugDraw(context);
+  }
+  for (var i = 0, len = flocks.length; i < len; ++i) {
+    flocks[i].draw(context);
+  }
 
   window.requestAnimationFrame(step);
 }
@@ -50,9 +66,13 @@ context.canvas.width = ww;
 context.canvas.height = wh;
 
 let g = new Grid(ww, wh, 100);
-let f = new Flock(g);
-f.createBoids(100);
+flocks.push(new Flock(g));
+flocks[0].createBoids(3);
 //f.createSource(ww / 2, wh / 2);
-f.createSource(25, 25);
+flocks[0].createSource(25, 25);
+
+let x = new Flock(g);
+x.createBoids(1);
+x.createSource(75, 75);
 
 window.requestAnimationFrame(step);

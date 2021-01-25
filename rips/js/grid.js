@@ -1,6 +1,8 @@
-var Boid = require('./Boid.js');
+import BoidFunction from './Boid.js';
 
-module.exports = (function () {
+const Boid = BoidFunction();
+
+export default function () {
   // move to reset fn?
   Grid.prototype.width = 0;
   Grid.prototype.height = 0;
@@ -81,12 +83,13 @@ module.exports = (function () {
     return selectedID;
   }
 
-  Grid.prototype.findNeighbors = function(threshold, maxNeighbors) {
+  // NOTE prototype is an OUT variable (modified within this fn)
+  Grid.prototype.findNeighbors = function(threshold, maxNeighbors, prototype) {
     var scaleFactor = 1000;
-    var numBoids = Boid.prototype.numBoids;
+    var numBoids = prototype.numBoids;
 
     for (var idxBoid = 0; idxBoid < numBoids; ++idxBoid) {
-      var bp = Boid.prototype.pos[idxBoid];
+      var bp = prototype.pos[idxBoid];
       var qx = bp[0];
       var qy = bp[1];
 
@@ -123,9 +126,9 @@ module.exports = (function () {
       neighbors = neighbors.sort(function(a,b){return a-b});
       neighbors = neighbors.slice(0, maxNeighbors);
       // strip off the position info to leave the IDs
-      Boid.prototype.neighbors[idxBoid] = neighbors.map(function(x){return x % scaleFactor});
+      prototype.neighbors[idxBoid] = neighbors.map(function(x){return x % scaleFactor});
     }
   }
 
   return Grid;
-})();
+}
